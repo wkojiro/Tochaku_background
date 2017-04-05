@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="jp.techacademy.wakabayashi.kojiro.tochaku_background.MainActivity">
+
+    <android.support.design.widget.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:theme="@style/AppTheme.AppBarOverlay">
+
+        <android.support.v7.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/colorPrimary"
+            app:popupTheme="@style/AppTheme.PopupOverlay" />
+
+    </android.support.design.widget.AppBarLayout>
+
+    <!--
+    <include layout="@layout/content_main"
+             android:id="@+id/include2" /> -->
+
+
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textSize="20dp"
+        android:text="TextView"
+        android:layout_weight="0.10"/>
+
+
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                    xmlns:tools="http://schemas.android.com/tools"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    tools:context=".MainActivity" >
+
+
+        <FrameLayout
+            android:id="@+id/mapFrame"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <fragment xmlns:android="http://schemas.android.com/apk/res/android"
+                      android:name="com.google.android.gms.maps.SupportMapFragment"
+                      android:id="@+id/map"
+                      android:layout_width="match_parent"
+                      android:layout_height="match_parent" />
+
+            <TextView
+                android:id="@+id/username"
+                android:textSize="15sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:layout_marginLeft="20dp"
+                android:layout_marginRight="20dp"
+                android:layout_marginTop="70dp"
+                android:layout_alignParentTop="true"
+                android:layout_centerHorizontal="true" />
+
+            <LinearLayout
+                android:id="@+id/header"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginLeft="0dp"
+                android:layout_marginRight="0dp"
+                android:layout_gravity="bottom"
+                android:layout_below="@+id/mapFrame"
+                android:layout_centerHorizontal="true">
+
+
+                <RelativeLayout
+                    android:id="@+id/mid"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginLeft="0dp"
+                    android:layout_marginRight="0dp"
+                    android:layout_above="@+id/header"
+                    android:layout_centerHorizontal="true">
+
+                    <TextView
+                        android:id="@+id/dest_text"
+                        android:layout_width="match_parent"
+                        android:layout_height="120dp"
+                        android:layout_marginRight="20dp"
+                        android:layout_marginStart="@dimen/middle_margin"
+                        android:layout_centerHorizontal="true"
+                        android:gravity="center"
+                        android:text="aaa"
+                        android:background="#8FFF"
+                        android:textSize="@dimen/default_text_size"/>
+
+                </RelativeLayout>
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/map"
+                    android:layout_centerHorizontal="true"
+                    android:layout_marginLeft="20dp"
+                    android:layout_marginRight="20dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="60dp"
+                    android:background="#8af"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    tools:ignore="ObsoleteLayoutParam">
+<!--
+                    <Button
+                        android:id="@+id/button_start"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="5dp"
+                        android:layout_weight="1"
+                        android:text="@string/start"
+                        android:textSize="@dimen/default_text_size"
+                        tools:ignore="ButtonStyle" />
+
+                    <Button
+                        android:id="@+id/button_stop"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="5dp"
+                        android:layout_weight="1"
+                        android:text="@string/stop"
+                        android:textSize="@dimen/default_text_size"
+                        tools:ignore="ButtonStyle" /> -->
+
+                    <Button
+                        android:id="@+id/request_location_updates_button"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="5dp"
+                        android:layout_weight="1"
+                        android:textSize="@dimen/default_text_size"
+                        android:text="@string/start"
+                        tools:ignore="ButtonStyle"/>
+
+                    <Button
+                        android:id="@+id/remove_location_updates_button"
+                        android:layout_width="match_parent"
+
+                        android:layout_height="wrap_content"
+                        android:layout_margin="5dp"
+                        android:layout_weight="1"
+                        android:textSize="@dimen/default_text_size"
+                        android:text="@string/stop"
+                        tools:ignore="ButtonStyle" />
+
+
+                </LinearLayout>
+
+
+
+            </LinearLayout>
+
+
+
+        </FrameLayout>
+    </RelativeLayout>
+
+</LinearLayout>
