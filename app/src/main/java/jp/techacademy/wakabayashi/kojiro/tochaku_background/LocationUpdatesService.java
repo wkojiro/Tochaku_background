@@ -7,6 +7,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.location.Location;
 import android.os.Binder;
@@ -19,12 +20,14 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.model.LatLng;
 
 /**
  * A bound and started service that is promoted to a foreground service when location updates have
@@ -41,7 +44,7 @@ import com.google.android.gms.location.LocationServices;
  * notification assocaited with that service is removed.
  */
 public class LocationUpdatesService extends Service implements GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener, LocationListener {
+        GoogleApiClient.OnConnectionFailedListener, LocationListener,SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final String PACKAGE_NAME =
             "com.google.android.gms.location.sample.locationupdatesforegroundservice";
@@ -51,6 +54,7 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
     static final String ACTION_BROADCAST = PACKAGE_NAME + ".broadcast";
 
     static final String EXTRA_LOCATION = PACKAGE_NAME + ".location";
+    static final String EXTRA_DESTANCE = PACKAGE_NAME + ".destance";
     private static final String EXTRA_STARTED_FROM_NOTIFICATION = PACKAGE_NAME +
             ".started_from_notification";
 
@@ -97,7 +101,30 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
     /**
      * The current location.
      */
+
     private Location mLocation;
+    private Float destance;
+
+
+    //memo: preferenceから現在登録されているユーザーを受け取る為の変数
+    String username;
+    String email;
+    String access_token;
+
+
+    //memo: preferenceから現在登録されている目的地を受け取る為の変数
+    String address;
+    String latitude; //StringにしているけどFloat
+    String longitude;//StringにしているけどFloat
+    String destname;
+    String destemail;
+    private Double destlatitude, destlongitude,currentlatitude,currentlongitude;
+    private LatLng latlng;
+
+    protected Location mCurrentLocation;
+    protected LatLng currentlatlng;
+
+
 
     public LocationUpdatesService() {
     }
@@ -284,10 +311,15 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
         Log.i(TAG, "New location: " + location);
 
         mLocation = location;
+        String test = "aaa";
+
+        getDestance(location);
 
         // Notify anyone listening for broadcasts about the new location.
         Intent intent = new Intent(ACTION_BROADCAST);
+        intent.putExtra(EXTRA_DESTANCE, test);
         intent.putExtra(EXTRA_LOCATION, location);
+
         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
 
         // Update notification content if running as a foreground service.
@@ -334,4 +366,59 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
         }
         return false;
     }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sp, String key) {
+Log.d("service","onSharedPreferenceChanged");
+        username = sp.getString(Const.UnameKEY, "");
+        email = sp.getString(Const.EmailKEY, "");
+        access_token = sp.getString(Const.TokenKey, "");
+
+        destname = sp.getString(Const.DestnameKEY, "");
+        address = sp.getString(Const.DestaddressKEY, "");
+        destemail = sp.getString(Const.DestemailKEY, "");
+        latitude = sp.getString(Const.DestLatitudeKEY, "");
+        longitude = sp.getString(Const.DestLongitudeKEY, "");
+        Log.d("debug", latitude);
+        //本来はoriginaldestanceが欲しい
+
+        if (!Utils.isEmptyDest(this)) {
+            destlatitude = Double.parseDouble(latitude);
+            destlongitude = Double.parseDouble(longitude);
+
+            latlng = new LatLng(destlatitude, destlongitude);
+            Log.d("debug", "onSharedPreferenceChangedListner_setMarkerが呼ばれる");
+            // 標準のマーカー
+            //setMarker(destlatitude, destlongitude);
+        }
+
+    }
+
+    private void getDestance(Location location){
+
+
+        currentlatitude = location.getLatitude();
+        currentlongitude = location.getLongitude();
+
+
+        Float nowdestance;
+       // Float referencedestance;
+
+/*
+
+        //memo:　目的地と現在位置の距離を取る
+        float[] results = new float[1];
+        Location.distanceBetween(destlatitude, destlongitude, currentlatitude, currentlongitude, results);
+
+        nowdestance = results[0]/1000;
+
+
+        Log.d("service", String.valueOf(nowdestance));
+        Log.d("service", String.valueOf(destlatitude));
+        Log.d("service", String.valueOf(destlongitude));
+
+*/
+    }
+
+
 }

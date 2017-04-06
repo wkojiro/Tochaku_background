@@ -172,6 +172,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             LocationUpdatesService.LocalBinder binder = (LocationUpdatesService.LocalBinder) service;
             //memo: mServiceとはLocationUpdatesServiceそのもの。そこと接続するという意味か？（＝LocationUpdatesServiceを起動するということ？）
             mService = binder.getService();
+            Log.d("debug","onServiceConnected");
             mBound = true;
         }
 
@@ -220,6 +221,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 requestPermissions();
             }
         }
+
+        //memo:繋いで切る感じか？？
+
+        if(mStatus == 0 && Utils.requestingLocationUpdates(this) == true && mService != null){
+            mService.removeLocationUpdates();
+        }
+
     }
 
     //memo: onCreateではなく、onStartに記述しているのは、バックグラウンドから戻って来ることを想定しているから？
@@ -235,9 +243,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mRemoveLocationUpdatesButton = (Button) findViewById(R.id.remove_location_updates_button);
 
 
+
+
         Log.d("debug","いつ呼ばれるか");
         Toast.makeText(this,"ステータス"+mStatus,Toast.LENGTH_SHORT).show();
         // Restore the state of the buttons when the activity (re)launches.
+
+
         setButtonsState(Utils.requestingLocationUpdates(this));
 
         mRequestLocationUpdatesButton.setOnClickListener(new View.OnClickListener() {
@@ -447,7 +459,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 Log.i(TAG, "User interaction was cancelled.");
             } else if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // Permission was granted.
-                mService.requestLocationUpdates();
+
+                // memo: 本来ここで繋いでいたが繋ぐとButtonが切り替わってしまうのでここでは繋がない。
+               // mService.requestLocationUpdates();
+                Toast.makeText(this,"パーミッションを受け付けました。ご利用有難うございます。",Toast.LENGTH_SHORT).show();
             } else {
                 //memo:パーミッションが拒否された場合にスナックバーがクリッかぶるになるっぽい Permission denied.
                 setButtonsState(false);
@@ -481,13 +496,19 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         @Override
         public void onReceive(Context context, Intent intent) {
             Location location = intent.getParcelableExtra(LocationUpdatesService.EXTRA_LOCATION);
+            String test = intent.getStringExtra(LocationUpdatesService.EXTRA_DESTANCE);
+
+            Log.d("test",test);
+           // Float destance = intent.getParcelableExtra(LocationUpdatesService.EXTRA_DESTANCE);
             if (location != null) {
                 Toast.makeText(MainActivity.this, Utils.getLocationText(location),
                         Toast.LENGTH_SHORT).show();
+               Toast.makeText(MainActivity.this, test,Toast.LENGTH_SHORT).show();
+
 
                 mCurrentLocation = location;
 
-                mTextView.setText(Utils.getLocationText(location));
+                mTextView.setText(Utils.getLocationText(location) );
 
                 //memo:ここで切り分けが必要。
                 /*
@@ -514,9 +535,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         }
     }
     @Override
-    public void onSharedPreferenceChanged(SharedPreferences sp, String s) {
+    public void onSharedPreferenceChanged(SharedPreferences sp, String key) {
         // Update the buttons state depending on whether location updates are being requested.
-        if (s.equals(Utils.KEY_REQUESTING_LOCATION_UPDATES)) {
+        if (key.equals(Utils.KEY_REQUESTING_LOCATION_UPDATES)) {
             setButtonsState(sp.getBoolean(Utils.KEY_REQUESTING_LOCATION_UPDATES, false));
         }
 
@@ -585,6 +606,7 @@ Log.d("debug","onStartで発火しているか");
                     break;
                 case 2:
                     mRequestLocationUpdatesButton.setEnabled(false);
+                    mRequestLocationUpdatesButton.setText("計測中");
                     mRemoveLocationUpdatesButton.setEnabled(true);
                     mRemoveLocationUpdatesButton.setText("停止");
                    // mRemoveLocationUpdatesButton.setVisibility(View.GONE);
@@ -622,6 +644,19 @@ Log.d("debug","onStartで発火しているか");
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(JAPAN, (float) 4.8));
 
         mDestTextView.setVisibility(View.INVISIBLE);
+
+        //memo:　現在位置をセット
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        mMap.setMyLocationEnabled(true);
 
 
     }
