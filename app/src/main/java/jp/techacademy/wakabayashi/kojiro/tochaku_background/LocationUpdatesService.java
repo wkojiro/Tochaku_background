@@ -10,11 +10,13 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
@@ -28,6 +30,17 @@ import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.model.LatLng;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URL;
 
 /**
  * A bound and started service that is promoted to a foreground service when location updates have
@@ -103,7 +116,7 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
      */
 
     private Location mLocation;
-    private Float destance;
+    private Float distance;
 
 
     //memo: preferenceから現在登録されているユーザーを受け取る為の変数
@@ -118,8 +131,13 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
     String longitude;//StringにしているけどFloat
     String destname;
     String destemail;
+    float originaldistance;
     private Double destlatitude, destlongitude,currentlatitude,currentlongitude;
     private LatLng latlng;
+
+    Float nowdistance;
+
+    Integer mailCount = 0;
 
     protected Location mCurrentLocation;
     protected LatLng currentlatlng;
@@ -143,6 +161,9 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
         handlerThread.start();
         mServiceHandler = new Handler(handlerThread.getLooper());
         mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+        sp.registerOnSharedPreferenceChangeListener(this);
     }
 
     @Override
@@ -311,13 +332,22 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
         Log.i(TAG, "New location: " + location);
 
         mLocation = location;
-        String test = "aaa";
-
-        getDestance(location);
+       // String test = "aaa";
 
         // Notify anyone listening for broadcasts about the new location.
         Intent intent = new Intent(ACTION_BROADCAST);
-        intent.putExtra(EXTRA_DESTANCE, test);
+
+
+        //memo: onLocationChangedが呼ばれるたびに呼ばれる。（目的地があれば現在位置との距離を測れる）
+        if (!Utils.isEmptyDest(this)) {
+            //memo: 目的地がないと落ちそう。
+            Double distance = getDistance(location);
+            Log.d("debug","呼ばれるたびにgetDistance");
+            //memo: 目的地がないと落ちそう。この設定だと目的地があれば何度もメールを送ることになる。取り合えずこのままにしておく。
+            postMyPositionMail(distance);
+
+            intent.putExtra(EXTRA_DESTANCE, distance);
+        }
         intent.putExtra(EXTRA_LOCATION, location);
 
         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
@@ -369,7 +399,7 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sp, String key) {
-Log.d("service","onSharedPreferenceChanged");
+        Log.d("service","onSharedPreferenceChanged");
         username = sp.getString(Const.UnameKEY, "");
         email = sp.getString(Const.EmailKEY, "");
         access_token = sp.getString(Const.TokenKey, "");
@@ -379,6 +409,10 @@ Log.d("service","onSharedPreferenceChanged");
         destemail = sp.getString(Const.DestemailKEY, "");
         latitude = sp.getString(Const.DestLatitudeKEY, "");
         longitude = sp.getString(Const.DestLongitudeKEY, "");
+
+
+      //  originaldistance = sp.getFloat(Const.ODISTANCEKEY, -1.00F);
+
         Log.d("debug", latitude);
         //本来はoriginaldestanceが欲しい
 
@@ -390,35 +424,133 @@ Log.d("service","onSharedPreferenceChanged");
             Log.d("debug", "onSharedPreferenceChangedListner_setMarkerが呼ばれる");
             // 標準のマーカー
             //setMarker(destlatitude, destlongitude);
+
+
+            //originaldistanceがすんなり取れるとは思えない。
+            if(sp.getString(Const.ODISTANCEKEY, "") != "") {
+                originaldistance = Float.parseFloat(sp.getString(Const.ODISTANCEKEY, ""));
+                Log.d("debug", "onSharedPreferenceChangedListnerでoriginaldistanceが保存された");
+            }
         }
 
     }
 
-    private void getDestance(Location location){
-
+    //memo:　目的地と現在位置の距離を取る（onLocationChangedが呼ばれるたびに計算する）
+    private Double getDistance(Location location){
 
         currentlatitude = location.getLatitude();
         currentlongitude = location.getLongitude();
 
-
-        Float nowdestance;
-       // Float referencedestance;
-
-/*
-
-        //memo:　目的地と現在位置の距離を取る
         float[] results = new float[1];
         Location.distanceBetween(destlatitude, destlongitude, currentlatitude, currentlongitude, results);
+        nowdistance = results[0]/1000;
+        Log.d("debug","getDistance_method"+nowdistance);
 
-        nowdestance = results[0]/1000;
-
-
-        Log.d("service", String.valueOf(nowdestance));
-        Log.d("service", String.valueOf(destlatitude));
-        Log.d("service", String.valueOf(destlongitude));
-
-*/
+        Double result = Double.parseDouble(nowdistance.toString());
+        Log.d("debug","getDistance_method"+result);
+        return result;
     }
 
+
+
+    private void postMyPositionMail(Double nowdistance){
+        Log.d("debug","基準距離"+ originaldistance);
+        double referencedistance = originaldistance * 0.3;
+        Log.d("debug","閾値"+referencedistance);
+
+        if(nowdistance - referencedistance <= 0 && mailCount == 0) {
+
+            new mailSet().execute(destname, destemail, String.valueOf(currentlatitude), String.valueOf(currentlongitude));
+            Toast.makeText(this, "全行程の７０％を通過しました。", Toast.LENGTH_LONG).show();
+
+            mailCount = 1;
+
+        }
+
+    }
+
+    public class mailSet extends AsyncTask<String, Void, Void> {
+        @Override
+        protected Void doInBackground(String... params) {
+
+            PostMail(params);
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result){
+
+
+
+
+        }
+    }
+
+    public String PostMail(String[] params){
+        HttpURLConnection con = null;//httpURLConnectionのオブジェクトを初期化している。
+        BufferedReader reader = null;
+        StringBuilder jsonData = new StringBuilder();
+        String urlString = "https://rails5api-wkojiro1.c9users.io/trackings.json?email="+ email +"&token="+ access_token +"";
+
+        InputStream inputStream = null;
+        String result = "";
+
+        final String json =
+                "{" +
+                        "\"destname\":\"" + params[0] + "\"," +
+                        "\"destemail\":\"" + params[1] + "\"," +
+                        "\"destaddress\":\"\"," +
+                        "\"nowlatitude\":\"" + params[2] + "\"," +
+                        "\"nowlongitude\":\"" + params[3] + "\"" +
+                        "}";
+
+        try {
+            URL url = new URL(urlString); //URLを生成
+            con = (HttpURLConnection) url.openConnection(); //HttpURLConnectionを取得する
+            con.setRequestMethod("POST");
+            con.setInstanceFollowRedirects(false); // HTTP リダイレクト (応答コード 3xx の要求) を、この HttpURLConnection インスタンスで自動に従うかどうかを設定します。
+            con.setRequestProperty("Accept-Language", "jp");
+            con.setDoOutput(true); //この URLConnection の doOutput フィールドの値を、指定された値に設定します。→イマイチよく理解できない（URL 接続は、入力または出力、あるいはその両方に対して使用できます。URL 接続を出力用として使用する予定である場合は doOutput フラグを true に設定し、そうでない場合は false に設定します。デフォルトは false です。）
+            con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+
+            // リスエストの送信
+            OutputStream os = con.getOutputStream(); //この接続に書き込みを行う出力ストリームを返します
+            con.connect();
+            // con.getResponseCode();
+
+
+            PrintStream ps = new PrintStream(os); //行の自動フラッシュは行わずに、指定のファイルで新しい出力ストリームを作成します。
+            ps.print(json);// JsonをPOSTする
+            ps.close();
+            final int status = con.getResponseCode();
+            Log.d("結果",String.valueOf(status));
+            if(status == HttpURLConnection.HTTP_OK) {
+                reader = new BufferedReader(new InputStreamReader(con.getInputStream(), "UTF-8"));//デフォルトサイズのバッファーでバッファリングされた、文字型入力ストリームを作成します。
+                String line = reader.readLine();
+                while (line != null) {
+                    jsonData.append(line);
+                    line = reader.readLine();
+                }
+                System.out.println(jsonData.toString());
+            }
+            con.disconnect();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (ProtocolException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        Log.d("メール送信", "Postしてみました");
+        // mProgress.dismiss();
+
+        result = "OK";
+
+        return result;
+    }
 
 }
