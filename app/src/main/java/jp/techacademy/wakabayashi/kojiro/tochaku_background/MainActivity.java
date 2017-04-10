@@ -1,6 +1,8 @@
 package jp.techacademy.wakabayashi.kojiro.tochaku_background;
 
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -62,6 +64,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
+import java.util.Calendar;
 
 /**
  * The only activity in this sample.
@@ -95,6 +98,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     // Used in checking for runtime permissions.
     private static final int REQUEST_PERMISSIONS_REQUEST_CODE = 34;
 
+    //alarm Setting for unconnected situation
+    private static final int bid1 = 1;
+
     // The BroadcastReceiver used to listen from broadcasts from the service.
     private MyReceiver myReceiver;
 
@@ -120,17 +126,17 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
 
     //memo: preferenceから現在登録されているユーザーを受け取る為の変数
-    String username;
-    String email;
-    String access_token;
+    private String username;
+    private String email;
+    private String access_token;
 
 
     //memo: preferenceから現在登録されている目的地を受け取る為の変数
-    String address;
-    String latitude; //StringにしているけどFloat
-    String longitude;//StringにしているけどFloat
-    String destname;
-    String destemail;
+    private String address;
+    private String latitude; //StringにしているけどFloat
+    private String longitude;//StringにしているけどFloat
+    private String destname;
+    private String destemail;
     private Double destlatitude, destlongitude;
     private LatLng latlng;
 
@@ -147,9 +153,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     Polyline polylineFinal;
     PolylineOptions options;
 
-    private Float originaldestance;
-    private Float nowdestance;
-    private double referencedestance;
+    private Float originaldistance;
+    private Float nowdistance;
+    private double referencedistance;
 
     Double currentlatitude;
     Double currentlongitude;
@@ -189,7 +195,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         //memo:サービスからの戻りを受け取る。（この位置に記述することが恐らく重要）
         myReceiver = new MyReceiver();
         setContentView(R.layout.activity_main);
-
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+        sp.registerOnSharedPreferenceChangeListener(this);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         toolbar.setTitle("到着予報");
@@ -215,7 +222,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        //memo: Permission を得ると、Preferenceに保存しているようです。その状態をここでチェックしている。 Check that the user hasn't revoked permissions by going to Settings.
+        //memo: Permission を得ると、Preferenceに保存しているようです。その状態をここでチェックしている。
+        // Check that the user hasn't revoked permissions by going to Settings.
+        //
         if (Utils.requestingLocationUpdates(this)) {
             if (!checkPermissions()) {
                 requestPermissions();
@@ -223,10 +232,16 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         }
 
         //memo:繋いで切る感じか？？
+        //memo: 強制的に再起動が走った時などの対応。（必ず停止状態にしたい。）
+        /*
+        要確認
 
-        if(mStatus == 0 && Utils.requestingLocationUpdates(this) == true && mService != null){
+         */
+        /*
+        if(mStatus == 0 && Utils.requestingLocationUpdates(this) && mService != null){
             mService.removeLocationUpdates();
         }
+        */
 
     }
 
@@ -283,16 +298,57 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                                 mStatus = 1;
                                 break;
                             case 1:
-                                Toast.makeText(MainActivity.this, "Case1"+mStatus, Toast.LENGTH_LONG).show();
-                                if(mailCount== 0) {
-                                    Toast.makeText(MainActivity.this, "メール"+mStatus, Toast.LENGTH_LONG).show();
-                                    new commingmail().execute(destname, destemail, String.valueOf(currentlatitude), String.valueOf(currentlongitude));
-                                }
-                                mailCount = 1;
 
-                                mStatus = 2;
+                                //memo: たまに目的地が0.0となる。
+
+
+
+                                    //memo: currentlatitude,currentlongitudeが0になる場合がある。これはまだ取得前に送ってる？？
+                                    if (mailCount == 0) {
+                                        Toast.makeText(MainActivity.this, "メール" + mStatus, Toast.LENGTH_LONG).show();
+                                        Toast.makeText(MainActivity.this, "出発地" + currentlatitude + currentlongitude, Toast.LENGTH_LONG).show();
+
+                                        new commingmail().execute(destname, destemail, String.valueOf(currentlatitude), String.valueOf(currentlongitude));
+                                    }
+                                    mailCount = 1;
+
+
+                                    //memo: firstMap起動後
+                                    mStatus = 2;
+                                    if (originaldistance != null) {
+
+
+
+                                    /*
+
+                                    ここで保存すると１０００KMみたいになる理由の仮説：
+
+                                    ここで保存することでpreferenceの
+                                    Listnerが走る。
+                                    それにより、値が変わってセットされてしまう。
+
+                                    では、何故今まで大丈夫だったのに今回は変わってしまったのか。
+                                    違った。もっと単純にConstに設定する文字をコピペのままのLongitudeとなってしまっていた。
+
+
+
+                                     */
+
+                                        saveOriginaldistancedata(originaldistance);
+                                        Toast.makeText(MainActivity.this, "距離を保存しました。" + originaldistance, Toast.LENGTH_LONG).show();
+                                    }
+
+                                    //memo: 5分後に起動開始。定期的にServiceの処理を走らせる。
+                                /*
+                                この処理はいつのまにか切れてしまうAndroidのBackGround処理に対応するために、例えアプリがBackGroundで放置されても定期的に呼び起こす。
+                                現状では、終了は明確にボタンを押すしか無いため、要注意。
+                                 */
+                                    pendingUpdates();
+
+
                                 break;
                             case 2:
+
                                 mStatus = 0;
                                 break;
 
@@ -314,6 +370,15 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 defaultMap();
                 mStatus = 0;
                 mailCount = 0;
+
+                if (PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getString(Const.ODISTANCEKEY, "") != ""){
+
+                    removeOriginaldistancedata();
+                    Log.d("debug","removeOriginaldistancedata");
+                }
+
+
+                removependingUpdates();
 
                 setButtonsState(Utils.requestingLocationUpdates(getApplicationContext()));
 
@@ -368,7 +433,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
 
-    //memo: startActivityForResultのコールバック
+    //memo: startActivityForResultのコールバック　（設定で目的地を設定したあとにバックボタンを押した時に呼ばれる）
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         Log.d("MainActivityに", "戻ってきた");
@@ -385,7 +450,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                         mStatus = 0;
                         defaultMap();
 
-//memo: 戻ってきてもmStatus= 0 のButton に切り替わらない
+                        //memo: 戻ってきてもmStatus= 0 のButton に切り替わらない
                         setButtonsState(Utils.requestingLocationUpdates(getApplicationContext()));
 
                         //  stopLocationUpdates();
@@ -400,6 +465,39 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 }
                 break;
         }
+    }
+
+
+    private void pendingUpdates(){
+
+        // 時間をセットする
+        Calendar calendar = Calendar.getInstance();
+        // Calendarを使って現在の時間をミリ秒で取得
+        calendar.setTimeInMillis(System.currentTimeMillis());
+        // 5秒後に設定
+        calendar.add(Calendar.SECOND,1000); //1000秒（１６分４０秒）
+
+        Intent intent = new Intent(getApplicationContext(), LocationUpdatesService.class);
+        PendingIntent pending = PendingIntent.getService(getApplicationContext(),bid1, intent,0);
+
+        // アラームをセットする
+        AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
+        //am.setExact(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pending);
+        am.setInexactRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), 100000, pending); //100000(1.67分）
+        Log.d("debug","pendingUpdatesがセットされました");
+//１０秒毎
+
+
+    }
+    private void removependingUpdates() {
+
+        Intent intent = new Intent(getApplicationContext(), LocationUpdatesService.class);
+        PendingIntent pending = PendingIntent.getService(getApplicationContext(), bid1, intent, 0);
+        // アラームを解除する
+        AlarmManager am = (AlarmManager) MainActivity.this.getSystemService(ALARM_SERVICE);
+        am.cancel(pending);
+        Log.d("debug","pendingUpdatesはremoveされました");
+
     }
 
 
@@ -495,16 +593,23 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     private class MyReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Location location = intent.getParcelableExtra(LocationUpdatesService.EXTRA_LOCATION);
-            String test = intent.getStringExtra(LocationUpdatesService.EXTRA_DESTANCE);
 
-            Log.d("test",test);
+
+            Log.d("debug","onReceive");
+            Location location = intent.getParcelableExtra(LocationUpdatesService.EXTRA_LOCATION);
+
+            //memo:
+            Double destance = intent.getDoubleExtra(LocationUpdatesService.EXTRA_DESTANCE,-1.00);
+
+
+            //Log.d("test", String.valueOf(destance));
            // Float destance = intent.getParcelableExtra(LocationUpdatesService.EXTRA_DESTANCE);
             if (location != null) {
                 Toast.makeText(MainActivity.this, Utils.getLocationText(location),
                         Toast.LENGTH_SHORT).show();
-               Toast.makeText(MainActivity.this, test,Toast.LENGTH_SHORT).show();
-
+                if(destance !=null) {
+                    Toast.makeText(MainActivity.this, String.valueOf(destance), Toast.LENGTH_SHORT).show();
+                }
 
                 mCurrentLocation = location;
 
@@ -568,12 +673,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             //memo: 目的地が変更されたら即座に変更
             // 値がなければ””が返ってしまう。それをDoubleに変えられないからエラーとなっていた。）
 
+
             if (!Utils.isEmptyDest(this)) {
                 destlatitude = Double.parseDouble(latitude);
                 destlongitude = Double.parseDouble(longitude);
 
                 latlng = new LatLng(destlatitude, destlongitude);
-                Log.d("debug", "onSharedPreferenceChangedListner_setMarkerが呼ばれる");
+                Log.d("debug", "onSharedPreferenceChangedListner 目的地がSetされた");
                 // 標準のマーカー
                 //setMarker(destlatitude, destlongitude);
             }
@@ -635,6 +741,7 @@ Log.d("debug","onStartで発火しているか");
         defaultMap();
 
     }
+
     private void defaultMap() {
 
         UiSettings us = mMap.getUiSettings();
@@ -660,6 +767,7 @@ Log.d("debug","onStartで発火しているか");
 
 
     }
+
     private void firstMap(){
 //PermissionがOKとなっている状態。この前段階でUser情報は取得しておきたい
 
@@ -681,11 +789,11 @@ Log.d("debug","onStartで発火しているか");
 
 
             //memo: 目的地をセット
-            destlatitude = Double.parseDouble(latitude);
-            destlongitude = Double.parseDouble(longitude);
+        destlatitude = Double.parseDouble(latitude);
+        destlongitude = Double.parseDouble(longitude);
 
-            latlng = new LatLng(destlatitude, destlongitude);
-            setMarker(destlatitude, destlongitude);
+        latlng = new LatLng(destlatitude, destlongitude);
+        setMarker(destlatitude, destlongitude);
 
         //memo:　現在位置をセット
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -729,10 +837,14 @@ Log.d("debug","onStartで発火しているか");
         Location.distanceBetween(destlatitude, destlongitude, currentlatitude, currentlongitude, results);
         Toast.makeText(getApplicationContext(), "距離：" + ( (Float)(results[0]/1000) ).toString() + "Km", Toast.LENGTH_LONG).show();
 
-        originaldestance = results[0]/1000;
-        referencedestance = originaldestance * 0.3;
+        originaldistance = results[0]/1000;
 
-          mDestTextView.setText("目的地までの距離：" + originaldestance + "Km");
+
+        referencedistance = originaldistance * 0.3;
+
+
+
+        mDestTextView.setText("目的地までの距離：" + originaldistance + "Km");
 
         LatLngBounds.Builder builder = new LatLngBounds.Builder();
         builder.include(destmarker.getPosition());
@@ -745,8 +857,6 @@ Log.d("debug","onStartで発火しているか");
         /**/
 
     }
-
-
 
     private void activeMap() {
         mDestTextView.setVisibility(View.VISIBLE);
@@ -786,34 +896,34 @@ Log.d("debug","onStartで発火しているか");
         currentMarker = mMap.addMarker(currentMarkerOptions);
 
         polylineFinal.remove();
-
-
+        
         //memo:　目的地と現在位置の距離を取る
         float[] results = new float[1];
         Location.distanceBetween(destlatitude, destlongitude, mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude(), results);
-        Toast.makeText(getApplicationContext(), "距離：" + ( (Float)(results[0]/1000) ).toString() + "Km", Toast.LENGTH_LONG).show();
+        Toast.makeText(getApplicationContext(), "ActiveMap距離：" + ( (Float)(results[0]/1000) ).toString() + "Km", Toast.LENGTH_LONG).show();
 
-        nowdestance = results[0]/1000;
+        nowdistance = results[0]/1000;
 
-        mDestTextView.setText("目的地までの距離：" + nowdestance + "Km");
-
+        mDestTextView.setText("ActiveMap目的地までの距離：" + nowdistance + "Km");
 
         zoomMap(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
 
 
-        Log.d("debug", String.valueOf(referencedestance));
-        Log.d("debug", String.valueOf(nowdestance));
-        Log.d("debug", String.valueOf(nowdestance - referencedestance));
+        Log.d("debug", "activeMap"+String.valueOf(referencedistance));
+        Log.d("debug", "activeMap"+String.valueOf(nowdistance));
+        Log.d("debug", "activeMap"+String.valueOf(nowdistance - referencedistance));
 
-        Toast.makeText(this,"mailcount" + mailCount +"",Toast.LENGTH_LONG).show();
+        Toast.makeText(this,"activeMap_mailcount" + mailCount +"",Toast.LENGTH_LONG).show();
 
-        if(nowdestance - referencedestance <= 0 && mailCount == 1) {
-
+        /* Service側と処理が被っている
+        //memo: Service側ですでに出している場合は、出さないようにする必要がある。（未実装）
+        if(nowdistance - referencedistance <= 0 && mailCount == 1) {
             // Log.d("debug",referencedestance);
             new commingmail().execute(destname, destemail, String.valueOf(currentlatitude), String.valueOf(currentlongitude));
-            Toast.makeText(this, "全行程の７０％を通過しました。", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Activity_全行程の７０％を通過しました。", Toast.LENGTH_LONG).show();
             mailCount = 2;
         }
+        */
 
     }
 
@@ -853,7 +963,7 @@ Log.d("debug","onStartで発火しているか");
     }
 
 
-    private class commingmail extends AsyncTask<String, Void, Void> {
+    public class commingmail extends AsyncTask<String, Void, Void> {
         @Override
         protected Void doInBackground(String... params) {
 
@@ -934,6 +1044,34 @@ Log.d("debug","onStartで発火しているか");
         return result;
     }
 
+
+    public void saveOriginaldistancedata(float originaldistance) {
+
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+        sp.registerOnSharedPreferenceChangeListener(this);
+        sp.edit().remove("originaldistance").apply();
+        //memo: http://qiita.com/usamao/items/d7fbb19b508dc4cb5521
+        //SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+        sp.registerOnSharedPreferenceChangeListener(this);
+        SharedPreferences.Editor editor = sp.edit();
+
+        //memo:Stringとして保存する。
+        editor.putString(Const.ODISTANCEKEY , String.valueOf(originaldistance));
+
+       // editor.putFloat(Const.ODISTANCEKEY, originaldistance, -1.00F);
+        editor.apply();
+        Log.d("originaldestance", "Value"+ originaldistance);
+        Log.d("originaldestance", "set"); //FirstMapで何度も呼ばれ無いように１通目のメールに連動させる。
+    }
+
+    public void removeOriginaldistancedata(){
+
+
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+        sp.edit().remove("originaldistance").apply();
+        Log.d("originaldestance", "remove");
+
+    }
 
 
 
