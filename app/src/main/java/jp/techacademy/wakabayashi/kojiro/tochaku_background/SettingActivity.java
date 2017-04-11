@@ -38,6 +38,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -60,6 +61,11 @@ import io.realm.Realm;
 import io.realm.RealmChangeListener;
 import io.realm.RealmResults;
 import io.realm.Sort;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class SettingActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
 
@@ -155,7 +161,7 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
         return result2;
     }
 
-
+/*
     public String Deletelogout(){
 
         String urlString = "https://rails5api-wkojiro1.c9users.io/users/sign_out.json";
@@ -209,7 +215,7 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
 
     }
 
-
+*/
     //memo: GetDestList
     public String GetdestList(){
 
@@ -312,6 +318,7 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
         sp = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         sp.registerOnSharedPreferenceChangeListener(this);
 
+        //memo: API用に取得しておく
         apiusername = sp.getString(Const.UnameKEY, "");
         apiemail = sp.getString(Const.EmailKEY, "");
         apitoken = sp.getString(Const.TokenKey, "");
@@ -360,6 +367,7 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
 
 
         mProgress.show();
+
         //memo: 目的地一覧を取得
         new getDestinations().execute();
 
@@ -448,34 +456,6 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
 
         reloadListView();
     }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-     //   super.onActivityResult(requestCode, resultCode, data);
-        Log.d("戻ってきた?", "戻ってきた?？");
-        switch (requestCode) {
-            //SecondActivityから戻ってきた場合
-            case (REQUEST_DEST_CODE):
-                if (resultCode == RESULT_OK) {
-                    //OKボタンを押して戻ってきたときの処理
-                    //memo: 目的地一覧を取得
-                    String returnValue = data.getStringExtra("Result");
-                    Log.d("戻ってきた", returnValue);
-                    new getDestinations().execute();
-                   // Log.v("Edit Text", data.getExtra("INPUT_STRING"));
-                } else if (resultCode == RESULT_CANCELED) {
-                    //キャンセルボタンを押して戻ってきたときの処理
-
-
-                } else {
-                    //その他
-                }
-                break;
-            default:
-                break;
-        }
-    }
-
 
     private void reloadListView() {
 
@@ -581,16 +561,48 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
         @Override
         protected String doInBackground(String... params) {
 
-            Deletelogout();
+            final MediaType JSON
+                    = MediaType.parse("application/json; charset=utf-8");
 
-            if(result2.equals("OK")){
-                result = "OK";
+            String urlString = "https://rails5api-wkojiro1.c9users.io/users/sign_out.json";
+            String result = null;
 
-            } else {
+            final String json =
+                    "{\"user\":{" +
+                            "\"email\":\"" + apiemail + "\"," +
+                            "\"access_token\":\"" + apitoken + "\"" +
+                            "}" +
+                    "}";
+
+            RequestBody body = RequestBody.create(JSON, json);
+
+            // リクエストオブジェクトを作って
+            Request request = new Request.Builder()
+                    .url(urlString)
+                    //.header("Authorization", credential)
+                    .delete(body)
+                    .build();
+
+            // クライアントオブジェクトを作って
+            OkHttpClient client = new OkHttpClient();
+
+            // リクエストして結果を受け取って
+            try {
+                okhttp3.Response response = client.newCall(request).execute();
+                Log.d("debug", String.valueOf(response));
+                if (response.isSuccessful()){
+
+                    result = "OK";
+                    Log.d("debug", "doPost success");
+
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
                 result = "NG";
+                Log.e("hoge", "error orz:" + e.getMessage(), e);
             }
+            // 返す
             return result;
-
         }
 
         // onPostExecute displays the results of the AsyncTask.
@@ -603,9 +615,6 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
 
                 Snackbar.make(v, "ログアウトしました", Snackbar.LENGTH_LONG).show();
 
-
-
-
                 finish();
 
                 mProgress.dismiss();
@@ -614,44 +623,67 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
                 mProgress.dismiss();
             }
         }
-
     }
-
-    //memo: ログアウト時にPreferenceを削除する。（＊sp.edit().clear().commit() だと何故かListenerが反応しない。
-    private void deleteUserdata() {
-        // Preferenceを削除する
-
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
-        sp.edit().remove("username").remove("email").remove("access_token").remove("id").remove("position_id").remove("destname").remove("destaddress").remove("destemail").remove("latitude").remove("longitude").commit();
-        //sp.edit().clear().commit();
-        Log.d("Delete","done");
-        apiemail = null;
-        apiusername = null;
-        apitoken = null;
-
-        mRealm.beginTransaction();
-        mRealm.deleteAll();
-        mRealm.commitTransaction();
-
-    }
-
 
     //memo: 目的地一覧をGET
     private class getDestinations extends AsyncTask<String, Void, String> {
         @Override
         protected  String doInBackground(String... params) {
 
+            final MediaType JSON
+                    = MediaType.parse("application/json; charset=utf-8");
 
-            GetdestList();
-            if(result2.equals("OK")){
-                result = "OK";
+            String urlString = "https://rails5api-wkojiro1.c9users.io/destinations.json?email="+ apiemail +"&token="+ apitoken +"";
+            String result = null;
 
-            } else {
+            // リクエストオブジェクトを作って
+            Request request = new Request.Builder()
+                    .url(urlString)
+                    .get()
+                    .build();
+
+            // クライアントオブジェクトを作って
+            OkHttpClient client = new OkHttpClient();
+
+            // リクエストして結果を受け取って
+            try {
+                Response response = client.newCall(request).execute();
+                Log.d("debug", String.valueOf(response));
+
+
+                if (response.isSuccessful()){
+
+                    String jsonData = response.body().string();
+                    Log.d("debug", jsonData);
+
+
+                    JSONArray jsonarray = new JSONArray(jsonData);
+                    for (int i = 0; i < jsonarray.length(); i++) {
+                        JSONObject jsonobject = jsonarray.getJSONObject(i);
+                    }
+
+                    //Realm mrealm = Realm.getDefaultInstance();
+                    mRealm= Realm.getDefaultInstance();
+                    mRealm.beginTransaction();
+                    Log.d("デリート前",String.valueOf(mRealm.isEmpty()));
+                    mRealm.where(Dest.class).findAll().deleteAllFromRealm();
+                    Log.d("デリート後",String.valueOf(mRealm.isEmpty()));
+                    mRealm.createOrUpdateAllFromJson(Dest.class,jsonarray); //Realm にそのまま吸い込まれた
+                    Log.d("後",String.valueOf(mRealm.isEmpty()));
+                    mRealm.commitTransaction();
+
+                    result = "OK";
+                    Log.d("debug", "doPost success");
+                    //  Log.d("debug", result);
+
+                }
+            } catch (IOException | JSONException e) { //Java SE 7 以降で有効な次の例では、重複したコードをなくすことができます。http://docs.oracle.com/javase/jp/7/technotes/guides/language/catch-multiple.html
+                e.printStackTrace();
                 result = "NG";
+                Log.e("error", "error orz:" + e.getMessage(), e);
             }
-
+            // 返す
             return result;
-
         }
 
         @Override
@@ -661,7 +693,7 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
             if(result.equals("OK")) {
                 //saveUserdata();
 
-                    Snackbar.make(v, "目的地の一覧を取得しました", Snackbar.LENGTH_LONG).show();
+                Snackbar.make(v, "目的地の一覧を取得しました", Snackbar.LENGTH_LONG).show();
                 mProgress.dismiss();
 
             } else {
@@ -686,7 +718,7 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
 
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
         //sp.registerOnSharedPreferenceChangeListener(this);
-        sp.edit().remove("id").remove("position_id").remove("destname").remove("destaddress").remove("destemail").remove("latitude").remove("longitude").commit();
+        sp.edit().remove("id").remove("position_id").remove("destname").remove("destaddress").remove("destemail").remove("latitude").remove("longitude").apply();
 
 
         SharedPreferences.Editor editor = sp.edit();
@@ -699,7 +731,7 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
         editor.putString(Const.DestLongitudeKEY, destRealm.getDestLongitude());
         //  editor.putString(Const.PassKey, res_password);
 
-        editor.commit();
+        editor.apply();
 
         Toast.makeText(this, "目的地を設定しました", Toast.LENGTH_LONG).show();
 
@@ -714,6 +746,54 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
 
     }
 
+    //memo: ログアウト時にPreferenceを削除する。（＊sp.edit().clear().commit() だと何故かListenerが反応しない。
+    private void deleteUserdata() {
+        // Preferenceを削除する
+
+        /*
+        .commit() から .apply()に変更。 20170411
+         */
+
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+        sp.edit().remove("username").remove("email").remove("access_token").remove("id").remove("position_id").remove("destname").remove("destaddress").remove("destemail").remove("latitude").remove("longitude").apply();
+        //sp.edit().clear().commit();
+        Log.d("Delete","done");
+        apiemail = null;
+        apiusername = null;
+        apitoken = null;
+
+        mRealm.beginTransaction();
+        mRealm.deleteAll();
+        mRealm.commitTransaction();
+
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        //   super.onActivityResult(requestCode, resultCode, data);
+        Log.d("戻ってきた?", "戻ってきた?？");
+        switch (requestCode) {
+            //SecondActivityから戻ってきた場合
+            case (REQUEST_DEST_CODE):
+                if (resultCode == RESULT_OK) {
+                    //OKボタンを押して戻ってきたときの処理
+                    //memo: 目的地一覧を取得
+                    String returnValue = data.getStringExtra("Result");
+                    Log.d("戻ってきた", returnValue);
+                    new getDestinations().execute();
+                    // Log.v("Edit Text", data.getExtra("INPUT_STRING"));
+                } else if (resultCode == RESULT_CANCELED) {
+                    //キャンセルボタンを押して戻ってきたときの処理
+
+
+                } else {
+                    //その他
+                }
+                break;
+            default:
+                break;
+        }
+    }
     //memo: 右上のメニューボタン
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

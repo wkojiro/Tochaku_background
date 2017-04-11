@@ -16,6 +16,7 @@
     <uses-feature
         android:glEsVersion="0x00020000"
         android:required="true"/>
+
     <application
         android:name=".DestApp"
         android:allowBackup="true"
@@ -67,6 +68,7 @@
             android:enabled="true"
             android:exported="true">
         </service>
+
     </application>
 
 </manifest>

@@ -145,6 +145,8 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
 
 
     public LocationUpdatesService() {
+
+        Log.d("debug","");
     }
 
     @Override
@@ -344,7 +346,7 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
             Double distance = getDistance(location);
             Log.d("debug","呼ばれるたびにgetDistance");
             //memo: 目的地がないと落ちそう。この設定だと目的地があれば何度もメールを送ることになる。取り合えずこのままにしておく。
-            postMyPositionMail(distance);
+            postMyPosition(distance);
 
             intent.putExtra(EXTRA_DESTANCE, distance);
         }
@@ -448,15 +450,17 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
 
         Double result = Double.parseDouble(nowdistance.toString());
         Log.d("debug","getDistance_method"+result);
+
         return result;
     }
 
 
 
-    private void postMyPositionMail(Double nowdistance){
+    private void postMyPosition(Double nowdistance){
         Log.d("debug","基準距離"+ originaldistance);
         double referencedistance = originaldistance * 0.3;
         Log.d("debug","閾値"+referencedistance);
+        Log.d("debug","現在の距離"+nowdistance);
 
         if(nowdistance - referencedistance <= 0 && mailCount == 0) {
 
@@ -466,6 +470,15 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
             mailCount = 1;
 
         }
+
+        if(nowdistance <= 0.08){
+
+            Toast.makeText(this, "お疲れ様でした。到着しました。", Toast.LENGTH_LONG).show();
+
+        }
+
+
+
 
     }
 

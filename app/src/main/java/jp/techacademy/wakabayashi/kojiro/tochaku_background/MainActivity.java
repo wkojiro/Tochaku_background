@@ -66,6 +66,12 @@ import java.net.ProtocolException;
 import java.net.URL;
 import java.util.Calendar;
 
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
 /**
  * The only activity in this sample.
  *
@@ -896,7 +902,7 @@ Log.d("debug","onStartで発火しているか");
         currentMarker = mMap.addMarker(currentMarkerOptions);
 
         polylineFinal.remove();
-        
+
         //memo:　目的地と現在位置の距離を取る
         float[] results = new float[1];
         Location.distanceBetween(destlatitude, destlongitude, mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude(), results);
@@ -963,86 +969,72 @@ Log.d("debug","onStartで発火しているか");
     }
 
 
-    public class commingmail extends AsyncTask<String, Void, Void> {
+    private class commingmail extends AsyncTask<String, Void, Void> {
         @Override
         protected Void doInBackground(String... params) {
 
-            PostMail(params);
+            final MediaType JSON
+                    = MediaType.parse("application/json; charset=utf-8");
 
+            String urlString = "https://rails5api-wkojiro1.c9users.io/trackings.json?email="+ email +"&token="+ access_token +"";
+            String result = null;
+
+            final String json =
+                    "{" +
+                            "\"destname\":\"" + params[0] + "\"," +
+                            "\"destemail\":\"" + params[1] + "\"," +
+                            "\"destaddress\":\"\"," +
+                            "\"nowlatitude\":\"" + params[2] + "\"," +
+                            "\"nowlongitude\":\"" + params[3] + "\"" +
+                    "}";
+
+
+            RequestBody body = RequestBody.create(JSON, json);
+
+            // リクエストオブジェクトを作って
+            Request request = new Request.Builder()
+                    .url(urlString)
+                    //.header("Authorization", credential)
+                    .post(body)
+                    .build();
+
+            // クライアントオブジェクトを作って
+            OkHttpClient client = new OkHttpClient();
+
+            // リクエストして結果を受け取って
+            try {
+                Response response = client.newCall(request).execute();
+                Log.d("debug", String.valueOf(response));
+                if (response.isSuccessful()){
+                    //memo: resultにresponcedataが全部入っている。
+                    /*
+                    {"id":136,"destname":"武蔵境","destemail":"wkojiro@eazydrive.co.jp","destaddress":"","nowlatitude":35.7066,"nowlongitude":139.578,"created_at":"2017-04-11T00:33:12.598Z","updated_at":"2017-04-11T00:33:12.598Z","url":"https://rails5api-wkojiro1.c9users.io/trackings/136.json"}
+                     */
+                    result = response.body().string();
+                    Log.d("debug", "doPost success");
+                    Log.d("debug", result);
+
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                Log.e("hoge", "error orz:" + e.getMessage(), e);
+            }
+
+            // 返す
             return null;
+
+
         }
 
         @Override
         protected void onPostExecute(Void result){
 
-        }
-    }
-
-    public String PostMail(String[] params){
-        HttpURLConnection con = null;//httpURLConnectionのオブジェクトを初期化している。
-        BufferedReader reader = null;
-        StringBuilder jsonData = new StringBuilder();
-        String urlString = "https://rails5api-wkojiro1.c9users.io/trackings.json?email="+ email +"&token="+ access_token +"";
-
-        InputStream inputStream = null;
-        String result = "";
-
-        final String json =
-                "{" +
-                        "\"destname\":\"" + params[0] + "\"," +
-                        "\"destemail\":\"" + params[1] + "\"," +
-                        "\"destaddress\":\"\"," +
-                        "\"nowlatitude\":\"" + params[2] + "\"," +
-                        "\"nowlongitude\":\"" + params[3] + "\"" +
-                        "}";
-
-        try {
-            URL url = new URL(urlString); //URLを生成
-            con = (HttpURLConnection) url.openConnection(); //HttpURLConnectionを取得する
-            con.setRequestMethod("POST");
-            con.setInstanceFollowRedirects(false); // HTTP リダイレクト (応答コード 3xx の要求) を、この HttpURLConnection インスタンスで自動に従うかどうかを設定します。
-            con.setRequestProperty("Accept-Language", "jp");
-            con.setDoOutput(true); //この URLConnection の doOutput フィールドの値を、指定された値に設定します。→イマイチよく理解できない（URL 接続は、入力または出力、あるいはその両方に対して使用できます。URL 接続を出力用として使用する予定である場合は doOutput フラグを true に設定し、そうでない場合は false に設定します。デフォルトは false です。）
-            con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-
-            // リスエストの送信
-            OutputStream os = con.getOutputStream(); //この接続に書き込みを行う出力ストリームを返します
-            con.connect();
-            // con.getResponseCode();
 
 
-            PrintStream ps = new PrintStream(os); //行の自動フラッシュは行わずに、指定のファイルで新しい出力ストリームを作成します。
-            ps.print(json);// JsonをPOSTする
-            ps.close();
-            final int status = con.getResponseCode();
-            Log.d("結果",String.valueOf(status));
-            if(status == HttpURLConnection.HTTP_OK) {
-                reader = new BufferedReader(new InputStreamReader(con.getInputStream(), "UTF-8"));//デフォルトサイズのバッファーでバッファリングされた、文字型入力ストリームを作成します。
-                String line = reader.readLine();
-                while (line != null) {
-                    jsonData.append(line);
-                    line = reader.readLine();
-                }
-                System.out.println(jsonData.toString());
-            }
-            con.disconnect();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (ProtocolException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
         }
 
-        Log.d("メール送信", "Postしてみました");
-        // mProgress.dismiss();
-
-        result = "OK";
-
-        return result;
     }
+
 
 
     public void saveOriginaldistancedata(float originaldistance) {
@@ -1072,7 +1064,6 @@ Log.d("debug","onStartで発火しているか");
         Log.d("originaldestance", "remove");
 
     }
-
 
 
     //memo: 右上のメニュー

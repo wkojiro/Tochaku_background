@@ -24,17 +24,18 @@ dependencies {
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
+    //memo: GoogleMap系これを追加
+    //http://java-lang-programming.com/ja/articles/32
+    // http://qiita.com/konnobu/items/8bec3d5a45235fc88a08
+    // https://akira-watson.com/android/google-map.html
     compile 'com.android.support:appcompat-v7:25.2.0'
     compile 'com.android.support.constraint:constraint-layout:1.0.1'
     compile 'com.android.support:design:25.2.0'
     compile 'com.squareup.retrofit2:retrofit:2.1.0'
     compile 'com.squareup.retrofit2:converter-gson:2.1.0'
-    testCompile 'junit:junit:4.12'
-    //memo: GoogleMap系これを追加
-    //http://java-lang-programming.com/ja/articles/32
-    // http://qiita.com/konnobu/items/8bec3d5a45235fc88a08
-    // https://akira-watson.com/android/google-map.html
+    compile 'com.squareup.okhttp3:okhttp:3.6.0'
     compile 'com.google.android.gms:play-services-analytics:9.0.1'
     compile 'com.google.android.gms:play-services-location:9.0.1'
     compile 'com.google.android.gms:play-services-ads:9.0.1'
+    testCompile 'junit:junit:4.12'
 }

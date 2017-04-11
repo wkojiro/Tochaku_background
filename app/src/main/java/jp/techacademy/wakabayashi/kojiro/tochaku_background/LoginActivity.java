@@ -38,6 +38,10 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.stream.JsonWriter;
 
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
 import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
@@ -59,201 +63,25 @@ public class LoginActivity extends AppCompatActivity implements SharedPreference
 
 
     //memo: パーツの定義
-    EditText mEmailEditText;
-    EditText mPasswordEditText;
-    EditText mUserNameEditText;
+    private EditText mEmailEditText;
+    private EditText mPasswordEditText;
+    private EditText mUserNameEditText;
 
     //memo: パーツ受け取り用
-    User user;
-    String username;
-    String email;
-    String password;
+    private User user;
+    private String username;
+    private String email;
+    private String password;
 
-    //Responseで受け取る変数
-    String res_token;
-    String res_id;
-    String res_username;
-    String res_email;
-    // String res_password;
+    //memo: Responseで受け取る変数
+    private String res_token;
+    private String res_id;
+    private String res_username;
+    private String res_email;
 
-    //API用変数
-    HttpURLConnection con = null;//httpURLConnectionのオブジェクトを初期化している。
-    BufferedReader reader = null;
-    StringBuilder jsonData = new StringBuilder();
-    InputStream inputStream = null;
-    String result = "";
-    String result2 = "";
-    int status = 0;
+    //memo: プログレス
+    private ProgressDialog mProgress;
 
-    // 未実装
-    ProgressDialog mProgress;
-
-    /*  Login ログイン登録 */
-    public String Login(String urlString , String[] params){
-
-        final String json =
-                "{\"user\":{" +
-                        "\"email\":\"" + params[1] + "\"," +
-                        "\"password\":\""+ params[2] + "\"" +
-                        "}" +
-                 "}";
-
-        try {
-            URL url = new URL(urlString); //URLを生成
-            con = (HttpURLConnection) url.openConnection(); //HttpURLConnectionを取得する
-            con.setRequestMethod(params[0]);
-            con.setInstanceFollowRedirects(false); // HTTP リダイレクト (応答コード 3xx の要求) を、この HttpURLConnection インスタンスで自動に従うかどうかを設定します。
-            con.setRequestProperty("Accept-Language", "jp");
-            con.setDoOutput(true); //この URLConnection の doOutput フィールドの値を、指定された値に設定します。→イマイチよく理解できない（URL 接続は、入力または出力、あるいはその両方に対して使用できます。URL 接続を出力用として使用する予定である場合は doOutput フラグを true に設定し、そうでない場合は false に設定します。デフォルトは false です。）
-            con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-
-            // リスエストの送信
-            OutputStream os = con.getOutputStream(); //この接続に書き込みを行う出力ストリームを返します
-            con.connect();
-
-            PrintStream ps = new PrintStream(os); //行の自動フラッシュは行わずに、指定のファイルで新しい出力ストリームを作成します。
-            ps.print(json);// JsonをPOSTする
-            ps.close();
-
-            status = con.getResponseCode();
-            Log.d("結果", String.valueOf(status));
-
-            //memo: StatusCodeが２００番代であればOK
-            //if (status == HttpURLConnection.HTTP_OK) {
-            if (status/100 == 2) {
-
-                reader = new BufferedReader(new InputStreamReader(con.getInputStream(), "UTF-8"));//デフォルトサイズのバッファーでバッファリングされた、文字型入力ストリームを作成します。
-                String line = reader.readLine();
-                while (line != null) {
-                    jsonData.append(line);
-                    line = reader.readLine();
-                }
-                System.out.println(jsonData.toString());
-
-                // JSON to Java
-                Gson gson = new Gson();
-
-                user = gson.fromJson(jsonData.toString(), User.class);
-
-                if (user != null) {
-                    res_id = user.getUid();
-                    res_token = user.getToken();
-                    res_username = user.getUserName();
-                    res_email = user.getEmail();
-
-                    System.out.println("id = " + user.getUid());
-                    System.out.println("username = " + user.getUserName());
-                    System.out.println("access_token = " + user.getToken());
-                }
-            }
-
-            con.disconnect();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (ProtocolException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        // mProgress.dismiss();
-        //memo: StatusCodeが２００番代であればOK
-        if (status/100 == 2){
-            result2 = "OK";
-        } else {
-            result2 = "NG";
-        }
-
-        return result2;
-    }
-
-    /*  POST 新規会員登録 */
-    //http://hmkcode.com/android-send-json-data-to-server/
-    public String Post(String urlString , String[] params) {
-
-        final String json =
-                "{\"user\":{" +
-                        "\"username\":\"" + params[1] + "\"," +
-                        "\"email\":\"" + params[2] + "\"," +
-                        "\"password\":\"" + params[3] + "\"," +
-                        "\"password_confirmation\":\"" + params[3] + "\"" +
-                        "}" +
-                "}";
-
-        try {
-
-            URL url = new URL(urlString); //URLを生成
-            con = (HttpURLConnection) url.openConnection(); //HttpURLConnectionを取得する
-            con.setRequestMethod(params[0]);
-            con.setInstanceFollowRedirects(false); // HTTP リダイレクト (応答コード 3xx の要求) を、この HttpURLConnection インスタンスで自動に従うかどうかを設定します。
-            con.setRequestProperty("Accept-Language", "jp");
-            con.setDoOutput(true); //この URLConnection の doOutput フィールドの値を、指定された値に設定します。→イマイチよく理解できない（URL 接続は、入力または出力、あるいはその両方に対して使用できます。URL 接続を出力用として使用する予定である場合は doOutput フラグを true に設定し、そうでない場合は false に設定します。デフォルトは false です。）
-            con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-
-            //
-            OutputStream os = con.getOutputStream(); //この接続に書き込みを行う出力ストリームを返します
-            con.connect();
-
-            PrintStream ps = new PrintStream(os); //行の自動フラッシュは行わずに、指定のファイルで新しい出力ストリームを作成します。
-            ps.print(json);// JsonをPOSTする
-            ps.close();
-
-            status = con.getResponseCode();
-            Log.d("結果", String.valueOf(status));
-
-            //memo: StatusCodeが２００番代であればOK
-            //if (status == HttpURLConnection.HTTP_OK) {
-            if (status/100 == 2) {
-                reader = new BufferedReader(new InputStreamReader(con.getInputStream(), "UTF-8"));//デフォルトサイズのバッファーでバッファリングされた、文字型入力ストリームを作成します。
-                String line = reader.readLine();
-                while (line != null) {
-                    jsonData.append(line);
-                    line = reader.readLine();
-                }
-                System.out.println(jsonData.toString());
-
-                // JSON to Java
-                Gson gson = new Gson();
-
-                //memo: JsonDataからユーザーインスタンスに格納
-                user = gson.fromJson(jsonData.toString(), User.class);
-
-                //memo: 上でResponseから取得したUserを今度はPreferenceに保存する為に変数に格納
-                if (user != null) {
-                    res_id = user.getUid();
-                    res_token = user.getToken();
-                    res_username = user.getUserName();
-                    res_email = user.getEmail();
-                   // res_password = user.getPassword();
-                    Log.d("レスポンス", res_id);
-                    System.out.println("username = " + user.getUserName());
-                    System.out.println("username = " + res_username);
-
-                }
-            }
-            con.disconnect();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (ProtocolException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-
-        //memo: StatusCodeが２００番代であればOK
-        if (status/100 == 2){
-            result2 = "OK";
-        } else {
-            result2 = "NG";
-        }
-
-        return result2;
-    }
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
@@ -262,7 +90,6 @@ public class LoginActivity extends AppCompatActivity implements SharedPreference
 
 
     }
-
 
     /* onCreate */
     @Override
@@ -291,22 +118,20 @@ public class LoginActivity extends AppCompatActivity implements SharedPreference
                 InputMethodManager im = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
                 im.hideSoftInputFromWindow(v.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
 
-                String type = "POST";
+
                 username = mUserNameEditText.getText().toString();
                 email = mEmailEditText.getText().toString();
                 password = mPasswordEditText.getText().toString();
 
                 if (email.length() != 0 && password.length() >= 6 ) {
-                    // プログレスダイアログを表示する
-                    // プログレスダイアログを表示する
+
                     mProgress.show();
-                    new createAccount().execute(type, username ,email , password);
-                   // createAccount(email, password);
+
+                    new createAccount().execute(username ,email , password);
 
                 } else {
 
                     Snackbar.make(v, "正しく入力してください", Snackbar.LENGTH_LONG).show();
-
 
                 }
             }
@@ -321,7 +146,7 @@ public class LoginActivity extends AppCompatActivity implements SharedPreference
                 InputMethodManager im = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
                 im.hideSoftInputFromWindow(v.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
 
-                String type = "POST";
+
                 email = mEmailEditText.getText().toString();
                 password = mPasswordEditText.getText().toString();
 
@@ -329,7 +154,7 @@ public class LoginActivity extends AppCompatActivity implements SharedPreference
 
                     // プログレスダイアログを表示する
                     mProgress.show();
-                    new loginAccount().execute(type, email , password);
+                    new loginAccount().execute(email , password);
 
 
                   //  login(email, password);
@@ -348,28 +173,83 @@ public class LoginActivity extends AppCompatActivity implements SharedPreference
         @Override
         protected String doInBackground(String... params) {
 
-
+            final MediaType JSON
+                    = MediaType.parse("application/json; charset=utf-8");
 
             String urlString = "https://rails5api-wkojiro1.c9users.io/users.json";
+            String result = null;
 
-            //params[0] is method
+            //memo: コンストラクタ。初期化している。Responseが上書く。
             user = new User();
-            user.setUsername(params[1]);
-            user.setEmail(params[2]);
-            user.setPassword(params[3]);
+            user.setUsername(params[0]);
+            user.setEmail(params[1]);
+            user.setPassword(params[2]);
 
-            Post(urlString,params);
+            final String json =
+                    "{\"user\":{" +
+                            "\"username\":\"" + params[0] + "\"," +
+                            "\"email\":\"" + params[1] + "\"," +
+                            "\"password\":\"" + params[2] + "\"," +
+                            "\"password_confirmation\":\"" + params[2] + "\"" +
+                            "}" +
+                    "}";
 
-           // Log.d("result", String.valueOf(result));
 
-            if(result2.equals("OK")){
-                result = "OK";
+            RequestBody body = RequestBody.create(JSON, json);
 
-            } else {
+            // リクエストオブジェクトを作って
+            Request request = new Request.Builder()
+                    .url(urlString)
+                    //.header("Authorization", credential)
+                    .post(body)
+                    .build();
+
+            // クライアントオブジェクトを作って
+            OkHttpClient client = new OkHttpClient();
+
+            // リクエストして結果を受け取って
+            try {
+                okhttp3.Response response = client.newCall(request).execute();
+                Log.d("debug", String.valueOf(response));
+                if (response.isSuccessful()){
+
+                    String jsonData = response.body().string();
+                 //   Log.d("debug", result);
+
+                    // JSON to Java
+                    Gson gson = new Gson();
+
+                    //memo: JsonDataからユーザーインスタンスに格納 http://qiita.com/u-chida/items/cbdd040e4199a10936dc
+                 //   user = gson.fromJson(jsonData.toString(), User.class);
+                    user = gson.fromJson(jsonData, User.class);
+                    Log.d("debug", String.valueOf(response.body().toString()));
+                    Log.d("debug", String.valueOf(user));
+
+                    //memo: 上でResponseから取得したUserを今度はPreferenceに保存する為に変数に格納
+                    if (user != null) {
+                        res_id = user.getUid();
+                        res_token = user.getToken();
+                        res_username = user.getUserName();
+                        res_email = user.getEmail();
+                        // res_password = user.getPassword();
+                        Log.d("レスポンス", res_id);
+                        System.out.println("username = " + user.getUserName());
+                        System.out.println("username = " + res_username);
+
+                    }
+                    result = "OK";
+                    Log.d("debug", "doPost success");
+                  //  Log.d("debug", result);
+
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
                 result = "NG";
+                Log.e("hoge", "error orz:" + e.getMessage(), e);
             }
-                return result;
 
+            // 返す
+            return result;
         }
 
         @Override
@@ -377,15 +257,16 @@ public class LoginActivity extends AppCompatActivity implements SharedPreference
             View v = findViewById(android.R.id.content);
 
             if(result.equals("OK")) {
+
+                //memo: 会員情報をPreferenceに保存
                 saveUserdata();
 
-                // プログレスダイアログを非表示にする
                 mProgress.dismiss();
-                Snackbar.make(v, "会員登録が完了しました。", Snackbar.LENGTH_LONG).show();
+                Toast.makeText(LoginActivity.this,"会員登録が完了しました。",Toast.LENGTH_SHORT).show();
+
                 finish();
             } else {
-                Snackbar.make(v, "会員登録に失敗しました。通信環境をご確認下さい。", Snackbar.LENGTH_LONG).show();
-                // プログレスダイアログを非表示にする
+                Toast.makeText(LoginActivity.this,"会員登録に失敗しました。通信環境をご確認下さい。",Toast.LENGTH_SHORT).show();
                 mProgress.dismiss();
             }
         }
@@ -396,21 +277,77 @@ public class LoginActivity extends AppCompatActivity implements SharedPreference
         @Override
         protected String doInBackground(String... params){
 
-            mProgress.show();
+            final MediaType JSON
+                    = MediaType.parse("application/json; charset=utf-8");
 
             String urlString = "https://rails5api-wkojiro1.c9users.io/users/sign_in.json";
+            String result = null;
             user = new User();
-            user.setEmail(params[1]);
-            user.setPassword(params[2]);
+            user.setEmail(params[0]);
+            user.setPassword(params[1]);
 
-            Login(urlString,params);
+            final String json =
+                    "{\"user\":{" +
+                            "\"email\":\"" + params[0] + "\"," +
+                            "\"password\":\""+ params[1] + "\"" +
+                            "}" +
+                    "}";
 
-            if(result2.equals("OK")){
-                result = "OK";
 
-            } else {
+            RequestBody body = RequestBody.create(JSON, json);
+
+            // リクエストオブジェクトを作って
+            Request request = new Request.Builder()
+                    .url(urlString)
+                    //.header("Authorization", credential)
+                    .post(body)
+                    .build();
+
+            // クライアントオブジェクトを作って
+            OkHttpClient client = new OkHttpClient();
+
+            // リクエストして結果を受け取って
+            try {
+                okhttp3.Response response = client.newCall(request).execute();
+                Log.d("debug", String.valueOf(response));
+                if (response.isSuccessful()){
+                    //memo: responseにresponcedataが全部入っている。
+
+                    String jsonData = response.body().string();
+                    //   Log.d("debug", result);
+
+                    // JSON to Java
+                    Gson gson = new Gson();
+
+                    //memo: JsonDataからユーザーインスタンスに格納 http://qiita.com/u-chida/items/cbdd040e4199a10936dc
+                    //   user = gson.fromJson(jsonData.toString(), User.class);
+                    user = gson.fromJson(jsonData, User.class);
+                    Log.d("debug", String.valueOf(response.body().toString()));
+                    Log.d("debug", String.valueOf(user));
+
+                    //memo: 上でResponseから取得したUserを今度はPreferenceに保存する為に変数に格納
+                    if (user != null) {
+                        res_id = user.getUid();
+                        res_token = user.getToken();
+                        res_username = user.getUserName();
+                        res_email = user.getEmail();
+                        // res_password = user.getPassword();
+                        Log.d("レスポンス", res_id);
+                        System.out.println("username = " + user.getUserName());
+                        System.out.println("username = " + res_username);
+
+                    }
+                    result = "OK";
+                    Log.d("debug", "doPost success");
+                    //  Log.d("debug", result);
+
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
                 result = "NG";
+                Log.e("hoge", "error orz:" + e.getMessage(), e);
             }
+
             return result;
         }
 
@@ -421,17 +358,16 @@ public class LoginActivity extends AppCompatActivity implements SharedPreference
             View v = findViewById(android.R.id.content);
             if(result.equals("OK")) {
                 saveUserdata();
-                // プログレスダイアログを非表示にする
+
                 mProgress.dismiss();
                 Toast.makeText(LoginActivity.this, "ログインが完了しました。", Toast.LENGTH_LONG).show();
-                //Snackbar.make(v, "ログインが完了しました。", Snackbar.LENGTH_LONG).show();
+
                 finish();
             } else {
-                // プログレスダイアログを非表示にする
-                mProgress.dismiss();
 
-                Toast.makeText(LoginActivity.this, "会員登録に失敗しました。通信環境をご確認下さい。", Toast.LENGTH_LONG).show();
-                //Snackbar.make(v, "会員登録に失敗しました。通信環境をご確認下さい。", Snackbar.LENGTH_LONG).show();
+                mProgress.dismiss();
+                Toast.makeText(LoginActivity.this, "ログインに失敗しました。通信環境をご確認下さい。", Toast.LENGTH_LONG).show();
+
             }
         }
     }
@@ -445,7 +381,6 @@ public class LoginActivity extends AppCompatActivity implements SharedPreference
         editor.putString(Const.UnameKEY, res_username);
         editor.putString(Const.EmailKEY, res_email);
         editor.putString(Const.TokenKey, res_token);
-      //  editor.putString(Const.PassKey, res_password);
 
 
         editor.commit();

@@ -103,7 +103,7 @@ public class DestAdapter extends BaseAdapter{
         realm.close();
 
         checked_id = RailsRealm.getPositionId() -1;
-        Log.d("RailsIDから取得されたPosition_id", String.valueOf(checked_id));
+
       //  if (selected_position == position || checked_id == position) {
             if(checked_id == position){
                 checkBox.setChecked(true);
