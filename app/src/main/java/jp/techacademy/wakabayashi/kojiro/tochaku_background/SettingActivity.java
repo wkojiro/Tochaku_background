@@ -34,26 +34,17 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
+
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 
-import java.net.ProtocolException;
-import java.net.URL;
+import java.io.IOException;
+
 import java.util.ArrayList;
-import java.util.Map;
+
 
 
 //Realm関連
@@ -113,178 +104,6 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
 
 
     SharedPreferences sp;
-
-    //API用変数
-    HttpURLConnection con = null;//httpURLConnectionのオブジェクトを初期化している。
-    BufferedReader reader = null;
-    // StringBuilder jsonData = new StringBuilder();
-    InputStream inputStream = null;
-    String result = "";
-    String result2 = "";
-    int selected_position = 0;
-    int status = 0;
-
-
-
-    public String Deletedest(String[] params){
-
-
-        String urlString =  params[0]+"?email="+ apiemail +"&token="+ apitoken +"";
-
-        try{
-            URL url = new URL(urlString);
-            con = (HttpURLConnection) url.openConnection(); //HttpURLConnectionを取得する
-            con.setRequestMethod("DELETE");
-            con.setInstanceFollowRedirects(false); // HTTP リダイレクト (応答コード 3xx の要求) を、この HttpURLConnection インスタンスで自動に従うかどうかを設定します。
-            con.setRequestProperty("Accept-Language", "jp");
-            con.setDoOutput(false); //この URLConnection の doOutput フィールドの値を、指定された値に設定します。→イマイチよく理解できない（URL 接続は、入力または出力、あるいはその両方に対して使用できます。URL 接続を出力用として使用する予定である場合は doOutput フラグを true に設定し、そうでない場合は false に設定します。デフォルトは false です。）
-            con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-
-           // OutputStream os = con.getOutputStream(); //この接続に書き込みを行う出力ストリームを返します
-            con.connect();
-
-            // con.getResponseCode();
-
-            status = con.getResponseCode();
-            Log.d("レスポンス",String.valueOf(status));
-
-        }catch (ProtocolException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        if (status/100 == 2){
-            result2 = "OK";
-        } else {
-            result2 = "NG";
-        }
-        return result2;
-    }
-
-/*
-    public String Deletelogout(){
-
-        String urlString = "https://rails5api-wkojiro1.c9users.io/users/sign_out.json";
-
-
-        final String json =
-                "{\"user\":{" +
-                        "\"email\":\"" + apiemail + "\"," +
-                        "\"access_token\":\"" + apitoken + "\"" +
-                        "}" +
-                "}";
-
-        System.out.println(json.toString());
-        try {
-
-            URL url = new URL(urlString);
-            con = (HttpURLConnection) url.openConnection(); //HttpURLConnectionを取得する
-            con.setRequestMethod("DELETE");
-            con.setInstanceFollowRedirects(false); // HTTP リダイレクト (応答コード 3xx の要求) を、この HttpURLConnection インスタンスで自動に従うかどうかを設定します。
-            con.setRequestProperty("Accept-Language", "jp");
-            con.setDoOutput(false); //この URLConnection の doOutput フィールドの値を、指定された値に設定します。→イマイチよく理解できない（URL 接続は、入力または出力、あるいはその両方に対して使用できます。URL 接続を出力用として使用する予定である場合は doOutput フラグを true に設定し、そうでない場合は false に設定します。デフォルトは false です。）
-            con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-
-
-            // リスエストの送信
-            OutputStream os = con.getOutputStream(); //この接続に書き込みを行う出力ストリームを返します
-            con.connect();
-
-            // con.getResponseCode();
-
-            PrintStream ps = new PrintStream(os); //行の自動フラッシュは行わずに、指定のファイルで新しい出力ストリームを作成します。
-            ps.print(json);// JsonをPOSTする
-            ps.close();
-            status = con.getResponseCode();
-            Log.d("レスポンス",String.valueOf(status));
-
-
-        } catch (ProtocolException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        // mProgress.dismiss();
-
-        if (status/100 == 2){
-            result2 = "OK";
-        } else {
-            result2 = "NG";
-        }
-        return result2;
-
-    }
-
-*/
-    //memo: GetDestList
-    public String GetdestList(){
-
-        String urlString = "https://rails5api-wkojiro1.c9users.io/destinations.json?email="+ apiemail +"&token="+ apitoken +"";
-
-        try {
-
-            URL url = new URL(urlString); //URLを生成
-            con = (HttpURLConnection) url.openConnection(); //HttpURLConnectionを取得する
-            con.setRequestMethod("GET");
-            con.setInstanceFollowRedirects(false); // HTTP リダイレクト (応答コード 3xx の要求) を、この HttpURLConnection インスタンスで自動に従うかどうかを設定します。
-            con.setRequestProperty("Accept-Language", "jp");
-           // con.setDoInput(true); //この URLConnection の doOutput フィールドの値を、指定された値に設定します。→イマイチよく理解できない（URL 接続は、入力または出力、あるいはその両方に対して使用できます。URL 接続を出力用として使用する予定である場合は doOutput フラグを true に設定し、そうでない場合は false に設定します。デフォルトは false です。）
-            con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-
-            inputStream = con.getInputStream(); //GETだから
-            con.connect();
-
-            status = con.getResponseCode();
-            Log.d("5結果",String.valueOf(status));
-            if(status/100 == 2){
-
-                reader = new BufferedReader(new InputStreamReader(con.getInputStream(), "UTF-8"));//デフォルトサイズのバッファーでバッファリングされた、文字型入力ストリームを作成します。
-                String line = reader.readLine();
-
-                StringBuilder jsonData = new StringBuilder();
-                while (line != null) {
-                    jsonData.append(line);
-                    line = reader.readLine();
-                }
-
-               System.out.println(jsonData.toString());
-
-                JSONArray jsonarray = new JSONArray(jsonData.toString());
-                for (int i = 0; i < jsonarray.length(); i++) {
-                    JSONObject jsonobject = jsonarray.getJSONObject(i);
-                }
-
-              Log.d("6jsonArray",String.valueOf(jsonarray));
-
-                //Realm mrealm = Realm.getDefaultInstance();
-                mRealm= Realm.getDefaultInstance();
-                mRealm.beginTransaction();
-                Log.d("デリート前",String.valueOf(mRealm.isEmpty()));
-                mRealm.where(Dest.class).findAll().deleteAllFromRealm();
-                Log.d("デリート後",String.valueOf(mRealm.isEmpty()));
-                mRealm.createOrUpdateAllFromJson(Dest.class,jsonarray); //Realm にそのまま吸い込まれた
-                Log.d("後",String.valueOf(mRealm.isEmpty()));
-                mRealm.commitTransaction();
-
-            }
-
-            con.disconnect();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (ProtocolException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        if (status/100 == 2){
-            result2 = "OK";
-        } else {
-            result2 = "NG";
-        }
-        return result2;
-    }
 
 
     @Override
@@ -373,6 +192,20 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
 
         //memo: 現在保存されているRealmの中身を取得＆並べ替え
         mRealm = Realm.getDefaultInstance();
+
+
+         /*
+         課題：
+
+         色々なソートをしてもリストに反映されない。常に、同じ結果（IDの小さい順）となる。
+         新しく追加したものが一番上にくるようにしたい。
+
+         reloadListViewでも、同じような記述がある。要リファクタリング。
+
+         上下が入れ替わると、結果的に異なる目的地を拾ってきてしまっている。
+
+          */
+        //memo: ここはある意味初期化みたいな役割と思われる。
         mDestRealmResults = mRealm.where(Dest.class).findAllSorted("id",Sort.ASCENDING);
      //   mDestRealmResults.sort("id",Sort.ASCENDING);
 
@@ -428,7 +261,6 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
                 dest = (Dest) parent.getAdapter().getItem(position);
                 // ダイアログを表示する
 
-
                 AlertDialog.Builder builder = new AlertDialog.Builder(SettingActivity.this);
 
                 builder.setTitle("削除");
@@ -461,6 +293,8 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
 
         //memo: 現在保存されているRealmの中身を取得＆並べ替え
         mRealm = Realm.getDefaultInstance();
+
+        //memo:昇順降順を逆にするとCheckboxで選んだ値も逆にする必要がある。（未対応）
         mDestRealmResults = mRealm.where(Dest.class).findAllSorted("id",Sort.ASCENDING);
         Log.d("ReloadView.リザルト",String.valueOf(mDestRealmResults.size()));
        // mDestRealmResults.sort("id",Sort.DESCENDING);
@@ -511,20 +345,43 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
        // reloadListView();
     }
 
-
     private class deletedest extends AsyncTask<String, Void, String>{
         @Override
         protected String doInBackground(String... params){
 
-            Deletedest(params);
-            if(result2.equals("OK")){
-                result = "OK";
+            final MediaType JSON
+                    = MediaType.parse("application/json; charset=utf-8");
 
-            } else {
+            String urlString =  params[0]+"?email="+ apiemail +"&token="+ apitoken +"";
+            String result = null;
+
+            // リクエストオブジェクトを作って
+            Request request = new Request.Builder()
+                    .url(urlString)
+                    //.header("Authorization", credential)
+                    .delete()
+                    .build();
+
+            // クライアントオブジェクトを作って
+            OkHttpClient client = new OkHttpClient();
+
+            // リクエストして結果を受け取って
+            try {
+                okhttp3.Response response = client.newCall(request).execute();
+                Log.d("debug", String.valueOf(response));
+                if (response.isSuccessful()){
+
+                    result = "OK";
+                    Log.d("debug", "doDeletedest success");
+
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
                 result = "NG";
+                Log.e("hoge", "error orz:" + e.getMessage(), e);
             }
+            // 返す
             return result;
-
         }
         @Override
         protected void onPostExecute(String result) {
@@ -540,22 +397,18 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
 
                 mRealm.commitTransaction();
 
-
                 Snackbar.make(v, "削除しました", Snackbar.LENGTH_LONG).show();
 
-                //memo: 目的地一覧を取得
+                //memo: 削除されたので、reloadの役割として目的地一覧を取得
                 new getDestinations().execute();
                 //finish();
             } else {
                 Snackbar.make(v, "削除に失敗しました。通信環境をご確認下さい。", Snackbar.LENGTH_LONG).show();
                 mProgress.dismiss();
 
-
             }
-
         }
     }
-
 
     private class logout extends AsyncTask<String, Void, String> {
         @Override
@@ -706,7 +559,6 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
     public void addDestination(Integer selected_position) {
         Log.d("selected_position",String.valueOf(selected_position));
 
-
       //  final Dest dest = (Dest) parent.getAdapter().getItem(selected_position);
 
         Realm realm = Realm.getDefaultInstance();
@@ -715,11 +567,10 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
         destRealm = realm.where(Dest.class).equalTo("position_id", selected_position +1 ).findFirst();
         realm.close();
 
-
+        //memo: 目的地を追加する際にすでにある目的地を消し、その後に追加する。
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
         //sp.registerOnSharedPreferenceChangeListener(this);
         sp.edit().remove("id").remove("position_id").remove("destname").remove("destaddress").remove("destemail").remove("latitude").remove("longitude").apply();
-
 
         SharedPreferences.Editor editor = sp.edit();
         editor.putInt(Const.RailsKEY,destRealm.getId());
@@ -729,7 +580,6 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
         editor.putString(Const.DestemailKEY, destRealm.getDestEmail());
         editor.putString(Const.DestLatitudeKEY, destRealm.getDestLatitude());
         editor.putString(Const.DestLongitudeKEY, destRealm.getDestLongitude());
-        //  editor.putString(Const.PassKey, res_password);
 
         editor.apply();
 
@@ -739,10 +589,6 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
         resultintent.putExtra("Result","OK");
         setResult(RESULT_OK,resultintent);
         finish();
-
-        //memo: destのIDを送る
-
-
 
     }
 
@@ -773,8 +619,11 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
         //   super.onActivityResult(requestCode, resultCode, data);
         Log.d("戻ってきた?", "戻ってきた?？");
         switch (requestCode) {
-            //SecondActivityから戻ってきた場合
+            //目的地編集Activityから戻ってきた場合
             case (REQUEST_DEST_CODE):
+
+                Log.d("debug", String.valueOf(REQUEST_DEST_CODE));
+
                 if (resultCode == RESULT_OK) {
                     //OKボタンを押して戻ってきたときの処理
                     //memo: 目的地一覧を取得
@@ -790,6 +639,7 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
                     //その他
                 }
                 break;
+
             default:
                 break;
         }
