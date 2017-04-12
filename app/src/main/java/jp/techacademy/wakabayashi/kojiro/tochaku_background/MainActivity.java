@@ -98,7 +98,7 @@ import okhttp3.Response;
  *
  *
  */
-public class MainActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener,OnMapReadyCallback {
+public class MainActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener, OnMapReadyCallback {
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int REQUEST_FIX_DEST_CODE = 111;
     // Used in checking for runtime permissions.
@@ -175,7 +175,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     //3:停止中（０へ）
 
 
-//memo; サービスとのコネクション状況の確認 onBind
+    //memo; サービスとのコネクション状況の確認 onBind
     // Monitors the state of the connection to the service.
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
 
@@ -184,7 +184,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             LocationUpdatesService.LocalBinder binder = (LocationUpdatesService.LocalBinder) service;
             //memo: mServiceとはLocationUpdatesServiceそのもの。そこと接続するという意味か？（＝LocationUpdatesServiceを起動するということ？）
             mService = binder.getService();
-            Log.d("debug","onServiceConnected");
+            Log.d("debug", "onServiceConnected");
             mBound = true;
         }
 
@@ -211,15 +211,15 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         setSupportActionBar(toolbar);
 
         //memo: set values
-        Log.d("mStatus", "01"+String.valueOf(mStatus));
+        Log.d("mStatus", "01" + String.valueOf(mStatus));
         mailCount = 0;
         mStatus = 0;
-        Log.d("mStatus", "02"+String.valueOf(mStatus));
+        Log.d("mStatus", "02" + String.valueOf(mStatus));
 
 
         mTextView = (TextView) findViewById(R.id.textView);
         mDestTextView = (TextView) findViewById(R.id.dest_text);
-        mUsername = (TextView)findViewById(R.id.username);
+        mUsername = (TextView) findViewById(R.id.username);
         mTextView.setText("ddd");
 
 
@@ -264,10 +264,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mRemoveLocationUpdatesButton = (Button) findViewById(R.id.remove_location_updates_button);
 
 
-
-
-        Log.d("debug","いつ呼ばれるか");
-        Toast.makeText(this,"ステータス"+mStatus,Toast.LENGTH_SHORT).show();
+        Log.d("debug", "いつ呼ばれるか");
+        Toast.makeText(this, "ステータス" + mStatus, Toast.LENGTH_SHORT).show();
         // Restore the state of the buttons when the activity (re)launches.
 
 
@@ -285,22 +283,22 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                         toast.show();
                         Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
                         startActivity(intent);
-                    } else if (Utils.isEmptyDest(getApplicationContext())){
+                    } else if (Utils.isEmptyDest(getApplicationContext())) {
                         Toast toast = Toast.makeText(MainActivity.this, "目的地を設定してください。", Toast.LENGTH_LONG);
                         toast.show();
 
                         Intent intent = new Intent(getApplicationContext(), SettingActivity.class);
-                        startActivityForResult(intent,REQUEST_FIX_DEST_CODE);
+                        startActivityForResult(intent, REQUEST_FIX_DEST_CODE);
 
                     } else {
 
                         //memo: LocationUpdatesService　ClassのrequestLocationUpdatesを起動させている（APIを繋ぐ）
                         mService.requestLocationUpdates();
 
-                        switch (mStatus){
+                        switch (mStatus) {
                             case 0:
 
-                                Toast.makeText(MainActivity.this, "Button mStatus"+mStatus, Toast.LENGTH_LONG).show();
+                                Toast.makeText(MainActivity.this, "Button mStatus" + mStatus, Toast.LENGTH_LONG).show();
                                 mStatus = 1;
                                 break;
                             case 1:
@@ -308,20 +306,19 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                                 //memo: たまに目的地が0.0となる。
 
 
+                                //memo: currentlatitude,currentlongitudeが0になる場合がある。これはまだ取得前に送ってる？？
+                                if (mailCount == 0) {
+                                    Toast.makeText(MainActivity.this, "メール" + mStatus, Toast.LENGTH_LONG).show();
+                                    Toast.makeText(MainActivity.this, "出発地" + currentlatitude + currentlongitude, Toast.LENGTH_LONG).show();
 
-                                    //memo: currentlatitude,currentlongitudeが0になる場合がある。これはまだ取得前に送ってる？？
-                                    if (mailCount == 0) {
-                                        Toast.makeText(MainActivity.this, "メール" + mStatus, Toast.LENGTH_LONG).show();
-                                        Toast.makeText(MainActivity.this, "出発地" + currentlatitude + currentlongitude, Toast.LENGTH_LONG).show();
-
-                                        new commingmail().execute(destname, destemail, String.valueOf(currentlatitude), String.valueOf(currentlongitude));
-                                    }
-                                    mailCount = 1;
+                                    new commingmail().execute(destname, destemail, String.valueOf(currentlatitude), String.valueOf(currentlongitude));
+                                }
+                                mailCount = 1;
 
 
-                                    //memo: firstMap起動後
-                                    mStatus = 2;
-                                    if (originaldistance != null) {
+                                //memo: firstMap起動後
+                                mStatus = 2;
+                                if (originaldistance != null) {
 
 
 
@@ -340,16 +337,16 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
                                      */
 
-                                        saveOriginaldistancedata(originaldistance);
-                                        Toast.makeText(MainActivity.this, "距離を保存しました。" + originaldistance, Toast.LENGTH_LONG).show();
-                                    }
+                                    saveOriginaldistancedata(originaldistance);
+                                    Toast.makeText(MainActivity.this, "距離を保存しました。" + originaldistance, Toast.LENGTH_LONG).show();
+                                }
 
-                                    //memo: 5分後に起動開始。定期的にServiceの処理を走らせる。
+                                //memo: 5分後に起動開始。定期的にServiceの処理を走らせる。
                                 /*
                                 この処理はいつのまにか切れてしまうAndroidのBackGround処理に対応するために、例えアプリがBackGroundで放置されても定期的に呼び起こす。
                                 現状では、終了は明確にボタンを押すしか無いため、要注意。
                                  */
-                                    pendingUpdates();
+                                pendingUpdates();
 
 
                                 break;
@@ -377,10 +374,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 mStatus = 0;
                 mailCount = 0;
 
-                if (PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getString(Const.ODISTANCEKEY, "") != ""){
+                if (PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getString(Const.ODISTANCEKEY, "") != "") {
 
                     removeOriginaldistancedata();
-                    Log.d("debug","removeOriginaldistancedata");
+                    Log.d("debug", "removeOriginaldistancedata");
                 }
 
 
@@ -447,9 +444,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             // Check for the integer request code originally supplied to startResolutionForResult().
             //memo: 計測開始途中で設定画面に行った場合の処理
             case REQUEST_FIX_DEST_CODE:
-                switch (resultCode){
+                switch (resultCode) {
                     case RESULT_OK:
-                        Log.d("最初から","最初から");
+                        Log.d("最初から", "最初から");
                         //最初からやり直す
                         mMap.clear();
                         mailCount = 0;
@@ -461,9 +458,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
                         //  stopLocationUpdates();
 
-                     //   updateUI();
+                        //   updateUI();
 
-                        Toast.makeText(this, "目的地が変更されました。" , Toast.LENGTH_LONG).show();
+                        Toast.makeText(this, "目的地が変更されました。", Toast.LENGTH_LONG).show();
                         break;
                     case RESULT_CANCELED:
 
@@ -474,27 +471,28 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
 
-    private void pendingUpdates(){
+    private void pendingUpdates() {
 
         // 時間をセットする
         Calendar calendar = Calendar.getInstance();
         // Calendarを使って現在の時間をミリ秒で取得
         calendar.setTimeInMillis(System.currentTimeMillis());
         // 5秒後に設定
-        calendar.add(Calendar.SECOND,1000); //1000秒（１６分４０秒）
+        calendar.add(Calendar.SECOND, 1000); //1000秒（１６分４０秒）
 
         Intent intent = new Intent(getApplicationContext(), LocationUpdatesService.class);
-        PendingIntent pending = PendingIntent.getService(getApplicationContext(),bid1, intent,0);
+        PendingIntent pending = PendingIntent.getService(getApplicationContext(), bid1, intent, 0);
 
         // アラームをセットする
         AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
         //am.setExact(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pending);
         am.setInexactRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), 100000, pending); //100000(1.67分）
-        Log.d("debug","pendingUpdatesがセットされました");
+        Log.d("debug", "pendingUpdatesがセットされました");
 //１０秒毎
 
 
     }
+
     private void removependingUpdates() {
 
         Intent intent = new Intent(getApplicationContext(), LocationUpdatesService.class);
@@ -502,7 +500,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         // アラームを解除する
         AlarmManager am = (AlarmManager) MainActivity.this.getSystemService(ALARM_SERVICE);
         am.cancel(pending);
-        Log.d("debug","pendingUpdatesはremoveされました");
+        Log.d("debug", "pendingUpdatesはremoveされました");
 
     }
 
@@ -511,7 +509,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
      * Returns the current state of the permissions needed.
      */
     private boolean checkPermissions() {
-        return  PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(this,
+        return PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION);
     }
 
@@ -565,8 +563,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 // Permission was granted.
 
                 // memo: 本来ここで繋いでいたが繋ぐとButtonが切り替わってしまうのでここでは繋がない。
-               // mService.requestLocationUpdates();
-                Toast.makeText(this,"パーミッションを受け付けました。ご利用有難うございます。",Toast.LENGTH_SHORT).show();
+                // mService.requestLocationUpdates();
+                Toast.makeText(this, "パーミッションを受け付けました。ご利用有難うございます。", Toast.LENGTH_SHORT).show();
             } else {
                 //memo:パーミッションが拒否された場合にスナックバーがクリッかぶるになるっぽい Permission denied.
                 setButtonsState(false);
@@ -588,7 +586,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                                 startActivity(intent);
                             }
                         })
-                .show();
+                        .show();
             }
         }
     }
@@ -601,25 +599,25 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         public void onReceive(Context context, Intent intent) {
 
 
-            Log.d("debug","onReceive");
+            Log.d("debug", "onReceive");
             Location location = intent.getParcelableExtra(LocationUpdatesService.EXTRA_LOCATION);
 
             //memo:
-            Double destance = intent.getDoubleExtra(LocationUpdatesService.EXTRA_DESTANCE,-1.00);
+            Double destance = intent.getDoubleExtra(LocationUpdatesService.EXTRA_DESTANCE, -1.00);
 
 
             //Log.d("test", String.valueOf(destance));
-           // Float destance = intent.getParcelableExtra(LocationUpdatesService.EXTRA_DESTANCE);
+            // Float destance = intent.getParcelableExtra(LocationUpdatesService.EXTRA_DESTANCE);
             if (location != null) {
                 Toast.makeText(MainActivity.this, Utils.getLocationText(location),
                         Toast.LENGTH_SHORT).show();
-                if(destance !=null) {
+                if (destance != null) {
                     Toast.makeText(MainActivity.this, String.valueOf(destance), Toast.LENGTH_SHORT).show();
                 }
 
                 mCurrentLocation = location;
 
-                mTextView.setText(Utils.getLocationText(location) );
+                mTextView.setText(Utils.getLocationText(location));
 
                 //memo:ここで切り分けが必要。
                 /*
@@ -629,7 +627,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 //memo: 現状ではPermission取得後に会員情報、目的地情報がなくてもfirstMapを呼びに来るのでここでエラーつまづく
                 //ユーザー目的地があれば、表示、
 
-                switch(mStatus) {
+                switch (mStatus) {
                     case 0:
                         defaultMap();
                         break;
@@ -645,6 +643,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             }
         }
     }
+
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sp, String key) {
         // Update the buttons state depending on whether location updates are being requested.
@@ -655,54 +654,52 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         //memo:
         //getString(第一引数はキー、第二引数はデフォルト値）つまり、何も保存していない場合は、呼び出された時にデフォルト値である””を返す。
-            username = sp.getString(Const.UnameKEY, "");
-            email = sp.getString(Const.EmailKEY, "");
-            access_token = sp.getString(Const.TokenKey, "");
+        username = sp.getString(Const.UnameKEY, "");
+        email = sp.getString(Const.EmailKEY, "");
+        access_token = sp.getString(Const.TokenKey, "");
         //memo: 現在設定されている目的地の取得
 
 
-            destname = sp.getString(Const.DestnameKEY, "");
-            address = sp.getString(Const.DestaddressKEY, "");
-            destemail = sp.getString(Const.DestemailKEY, "");
-            latitude = sp.getString(Const.DestLatitudeKEY, "");
-            longitude = sp.getString(Const.DestLongitudeKEY, "");
-            Log.d("目的地名", String.valueOf(destname));
-            Log.d("目的地住所", String.valueOf(address));
-            Log.d("目的地メールアドレス", String.valueOf(destemail));
-            Log.d("緯度", String.valueOf(latitude));
-            Log.d("経度", String.valueOf(longitude));
+        destname = sp.getString(Const.DestnameKEY, "");
+        address = sp.getString(Const.DestaddressKEY, "");
+        destemail = sp.getString(Const.DestemailKEY, "");
+        latitude = sp.getString(Const.DestLatitudeKEY, "");
+        longitude = sp.getString(Const.DestLongitudeKEY, "");
+        Log.d("目的地名", String.valueOf(destname));
+        Log.d("目的地住所", String.valueOf(address));
+        Log.d("目的地メールアドレス", String.valueOf(destemail));
+        Log.d("緯度", String.valueOf(latitude));
+        Log.d("経度", String.valueOf(longitude));
 
-            //memo: 開発用。ログインしているかどうかを判別しやすくするため。後で消す
-            mUsername = (TextView) findViewById(R.id.username);
-            mUsername.setText(String.valueOf(username));
+        //memo: 開発用。ログインしているかどうかを判別しやすくするため。後で消す
+        mUsername = (TextView) findViewById(R.id.username);
+        mUsername.setText(String.valueOf(username));
 
-            //memo: 目的地が変更されたら即座に変更
-            // 値がなければ””が返ってしまう。それをDoubleに変えられないからエラーとなっていた。）
+        //memo: 目的地が変更されたら即座に変更
+        // 値がなければ””が返ってしまう。それをDoubleに変えられないからエラーとなっていた。）
 
 
-            if (!Utils.isEmptyDest(this)) {
-                destlatitude = Double.parseDouble(latitude);
-                destlongitude = Double.parseDouble(longitude);
+        if (!Utils.isEmptyDest(this)) {
+            destlatitude = Double.parseDouble(latitude);
+            destlongitude = Double.parseDouble(longitude);
 
-                latlng = new LatLng(destlatitude, destlongitude);
-                Log.d("debug", "onSharedPreferenceChangedListner 目的地がSetされた");
-                // 標準のマーカー
-                //setMarker(destlatitude, destlongitude);
-            }
+            latlng = new LatLng(destlatitude, destlongitude);
+            Log.d("debug", "onSharedPreferenceChangedListner 目的地がSetされた");
+            // 標準のマーカー
+            //setMarker(destlatitude, destlongitude);
+        }
 
     }
 
 
-
-
     //memo:変更予定
-   private void setButtonsState(boolean requestingLocationUpdates) {
-Log.d("debug","onStartで発火しているか");
-       Log.d("debug","発火："+requestingLocationUpdates);
-       Log.d("debug","発火："+mStatus);
+    private void setButtonsState(boolean requestingLocationUpdates) {
+        Log.d("debug", "onStartで発火しているか");
+        Log.d("debug", "発火：" + requestingLocationUpdates);
+        Log.d("debug", "発火：" + mStatus);
 
         if (requestingLocationUpdates) {
-        //memo: 計測中
+            //memo: 計測中
 
             switch (mStatus) {
                 case 0:
@@ -721,20 +718,19 @@ Log.d("debug","onStartで発火しているか");
                     mRequestLocationUpdatesButton.setText("計測中");
                     mRemoveLocationUpdatesButton.setEnabled(true);
                     mRemoveLocationUpdatesButton.setText("停止");
-                   // mRemoveLocationUpdatesButton.setVisibility(View.GONE);
+                    // mRemoveLocationUpdatesButton.setVisibility(View.GONE);
                     //  mRequestLocationUpdatesButton.setEnabled(false);
                     break;
             }
-        }else{
-        //memo: 計測前
+        } else {
+            //memo: 計測前
             mRequestLocationUpdatesButton.setEnabled(true);
             mRequestLocationUpdatesButton.setText("現在位置を取得");
             mRemoveLocationUpdatesButton.setEnabled(false);
 
-        //    mRequestLocationUpdatesButton.setEnabled(true);
-        //    mRemoveLocationUpdatesButton.setEnabled(false);
+            //    mRequestLocationUpdatesButton.setEnabled(true);
+            //    mRemoveLocationUpdatesButton.setEnabled(false);
         }
-
 
 
     }
@@ -774,7 +770,7 @@ Log.d("debug","onStartで発火しているか");
 
     }
 
-    private void firstMap(){
+    private void firstMap() {
 //PermissionがOKとなっている状態。この前段階でUser情報は取得しておきたい
 
 
@@ -791,10 +787,10 @@ Log.d("debug","onStartで発火しているか");
 
 
         /* hide for background*/
-        mDestTextView.setText("目的地に［"+destname+"］がセットされました。目的地を変更するには［設定］画面から変更できます。");
+        mDestTextView.setText("目的地に［" + destname + "］がセットされました。目的地を変更するには［設定］画面から変更できます。");
 
 
-            //memo: 目的地をセット
+        //memo: 目的地をセット
         destlatitude = Double.parseDouble(latitude);
         destlongitude = Double.parseDouble(longitude);
 
@@ -802,6 +798,7 @@ Log.d("debug","onStartで発火しているか");
         setMarker(destlatitude, destlongitude);
 
         //memo:　現在位置をセット
+
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
@@ -813,6 +810,7 @@ Log.d("debug","onStartで発火しているか");
             return;
         }
         mMap.setMyLocationEnabled(true);
+
         currentlatlng = new LatLng(currentlatitude, currentlongitude);
         currentMarkerOptions.position(currentlatlng);
         currentMarkerOptions.title("現在位置");

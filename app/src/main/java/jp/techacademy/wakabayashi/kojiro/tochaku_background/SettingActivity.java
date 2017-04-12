@@ -75,9 +75,9 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
     public Dest destRealm;
     private Realm mRealm;
     private RealmResults<Dest> mDestRealmResults;
-    private RealmChangeListener mRealmListener = new RealmChangeListener() {
+    private RealmChangeListener<Realm> mRealmListener = new RealmChangeListener<Realm>() {
         @Override
-        public void onChange(Object element) {
+        public void onChange(Realm element) {
 
             //memo: 目的地一覧を取得
             Log.d("Reload","reload");
