@@ -89,8 +89,8 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
     //リストView
     private ListView mListView;
     //GetのResponseを受けるパラメータ
-    private ArrayList<Dest> mDestArrayList;
-    private DestAdapter mDestAdapter;
+     ArrayList<Dest> mDestArrayList;
+     DestAdapter mDestAdapter;
 
     ProgressDialog mProgress;
 
@@ -205,8 +205,8 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
          上下が入れ替わると、結果的に異なる目的地を拾ってきてしまっている。
 
           */
-        //memo: ここはある意味初期化みたいな役割と思われる。
-        mDestRealmResults = mRealm.where(Dest.class).findAllSorted("id",Sort.ASCENDING);
+        //memo: 後ほどReloadが走るまでの役割
+        mDestRealmResults = mRealm.where(Dest.class).findAllSorted("id",Sort.DESCENDING);
      //   mDestRealmResults.sort("id",Sort.ASCENDING);
 
 
@@ -294,15 +294,12 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
         //memo: 現在保存されているRealmの中身を取得＆並べ替え
         mRealm = Realm.getDefaultInstance();
 
-        //memo:昇順降順を逆にするとCheckboxで選んだ値も逆にする必要がある。（未対応）
-        mDestRealmResults = mRealm.where(Dest.class).findAllSorted("id",Sort.ASCENDING);
+        //memo:昇順降順を逆にしてもCheckboXは感知できるようにIDをみるようにした。
+        mDestRealmResults = mRealm.where(Dest.class).findAllSorted("id",Sort.DESCENDING);
         Log.d("ReloadView.リザルト",String.valueOf(mDestRealmResults.size()));
-       // mDestRealmResults.sort("id",Sort.DESCENDING);
-       // Log.d("reloadlistview", String.valueOf(mDestRealmResults));
 
 
         //memo: 仮説：現状だとmDestRealmResultsが変わったあとにListViewに表示している。
-
         mDestArrayList = new ArrayList<>();
 
         for (int i = 0; i < mDestRealmResults.size(); i++){
@@ -509,7 +506,6 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
                     String jsonData = response.body().string();
                     Log.d("debug", jsonData);
 
-
                     JSONArray jsonarray = new JSONArray(jsonData);
                     for (int i = 0; i < jsonarray.length(); i++) {
                         JSONObject jsonobject = jsonarray.getJSONObject(i);
@@ -556,15 +552,22 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
         }
     }
 
-    public void addDestination(Integer selected_position) {
-        Log.d("selected_position",String.valueOf(selected_position));
+    public void addDestination(Integer selected_id) {
+        Log.d("selected_position",String.valueOf(selected_id));
 
       //  final Dest dest = (Dest) parent.getAdapter().getItem(selected_position);
 
         Realm realm = Realm.getDefaultInstance();
 
+        //Integer railsid = -1;
+
+
         //memo: destIdで検索して当該のデータを取得 positionは０はじまり、position_idは１はじまりだから＋１する。
-        destRealm = realm.where(Dest.class).equalTo("position_id", selected_position +1 ).findFirst();
+        /*
+         本来的にはRailsIDで検索をかけ、保存するようにしたい。
+         */
+       // destRealm = realm.where(Dest.class).equalTo("position_id", selected_id +1 ).findFirst();
+        destRealm = realm.where(Dest.class).equalTo("id", selected_id ).findFirst();
         realm.close();
 
         //memo: 目的地を追加する際にすでにある目的地を消し、その後に追加する。
@@ -585,6 +588,8 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
 
         Toast.makeText(this, "目的地を設定しました", Toast.LENGTH_LONG).show();
 
+
+        //memo: ここで目的地が変更されるなどした場合に地図などをClear（Reset)にするためのIntentを戻している。
         Intent resultintent = new Intent();
         resultintent.putExtra("Result","OK");
         setResult(RESULT_OK,resultintent);

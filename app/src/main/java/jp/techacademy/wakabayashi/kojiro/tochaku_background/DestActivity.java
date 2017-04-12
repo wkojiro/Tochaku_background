@@ -35,23 +35,27 @@ import java.net.ProtocolException;
 import java.net.URL;
 
 import io.realm.Realm;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
 
 public class DestActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener  {
 
-    Dest mDest;
+    private Dest mDest;
 
     //パーツの定義
-    EditText mDestNameText;
-    EditText mDestEmailText;
-    EditText mDestAddressText;
-    Button createButton;
+    private EditText mDestNameText;
+    private EditText mDestEmailText;
+    private EditText mDestAddressText;
+    private Button createButton;
 
     //パーツから受け取るためのパラメータ
-    Dest dest;
-    String destname;
-    String destemail;
-    String destaddress;
-    String desturl;
+    private Dest dest;
+    private String destname;
+    private String destemail;
+    private String destaddress;
+    private String desturl;
 
 
 
@@ -59,32 +63,24 @@ public class DestActivity extends AppCompatActivity implements SharedPreferences
     ProgressDialog mProgress;
 
     //API通信のための会員Email及びToken(Preferenseから取得）
-    String username;
-    String email;
-    String access_token;
+    private String username;
+    private String email;
+    private String access_token;
 
     //preferenceから取得用
-    String name;
-    String address;
-    String demail;
-    String dlatitude;
-    String dlongitude;
+    private String name;
+    private String address;
+    private String demail;
+    private String dlatitude;
+    private String dlongitude;
 
 
 
-    //Responseを受け取るためのパラメータ(必要なのか？）
-    Integer res_destid;
-    Integer res_destpositionid;
-    String res_destname;
-    String res_destemail;
-    String res_destaddress;
-    String res_destlatitude;
-    String res_destlongitude;
 
 
-    String result = "";
-    String result2 = "";
-    int status = 0;
+
+    private String result = "";
+
 
     //memo: preferencceの書き換えを検知するListener
     @Override
@@ -94,181 +90,7 @@ public class DestActivity extends AppCompatActivity implements SharedPreferences
 
     }
 
-    public String Edit(String[] params){
-        HttpURLConnection con = null;//httpURLConnectionのオブジェクトを初期化している。
-        BufferedReader reader = null;
-        StringBuilder jsonData = new StringBuilder();
-        String urlString = params[3] +"?email="+ email +"&token="+ access_token +"";
 
-        InputStream inputStream = null;
-
-
-        final String json =
-                "{" +
-                        "\"destname\":\"" + params[0] + "\"," +
-                        "\"destemail\":\"" + params[1] + "\"," +
-                        "\"destaddress\":\"" + params[2] + "\"" +
-                        "}";
-
-        try {
-
-            URL url = new URL(urlString); //URLを生成
-            con = (HttpURLConnection) url.openConnection(); //HttpURLConnectionを取得する
-            con.setRequestMethod("PUT");
-            con.setInstanceFollowRedirects(false); // HTTP リダイレクト (応答コード 3xx の要求) を、この HttpURLConnection インスタンスで自動に従うかどうかを設定します。
-            con.setRequestProperty("Accept-Language", "jp");
-            con.setDoOutput(true); //この URLConnection の doOutput フィールドの値を、指定された値に設定します。→イマイチよく理解できない（URL 接続は、入力または出力、あるいはその両方に対して使用できます。URL 接続を出力用として使用する予定である場合は doOutput フラグを true に設定し、そうでない場合は false に設定します。デフォルトは false です。）
-            con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-
-            // リスエストの送信
-            OutputStream os = con.getOutputStream(); //この接続に書き込みを行う出力ストリームを返します
-            con.connect();
-            // con.getResponseCode();
-
-
-            PrintStream ps = new PrintStream(os); //行の自動フラッシュは行わずに、指定のファイルで新しい出力ストリームを作成します。
-            ps.print(json);// JsonをPOSTする
-            ps.close();
-            status = con.getResponseCode();
-            Log.d("結果",String.valueOf(status));
-            //if(status == HttpURLConnection.HTTP_OK) {
-            if(status/100 == 2){
-                reader = new BufferedReader(new InputStreamReader(con.getInputStream(), "UTF-8"));//デフォルトサイズのバッファーでバッファリングされた、文字型入力ストリームを作成します。
-                String line = reader.readLine();
-                while (line != null) {
-                    jsonData.append(line);
-                    line = reader.readLine();
-                }
-                System.out.println(jsonData.toString());
-            }
-            con.disconnect();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (ProtocolException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        Log.d("目的地登録", "Postしてみました");
-        // mProgress.dismiss();
-
-        if (status/100 == 2){
-            result2 = "OK";
-        } else {
-            result2 = "NG";
-        }
-
-
-
-        // return result
-        return result2;
-    }
-
-
-
-    /* Post ここでは目的地の住所などをPostするだけ。Responseは最悪無視しても問題ないはず。一覧は別画面でGetするから。*/
-    public String Post(Dest dest){
-        HttpURLConnection con = null;//httpURLConnectionのオブジェクトを初期化している。
-        BufferedReader reader = null;
-        StringBuilder jsonData = new StringBuilder();
-        String urlString = "https://rails5api-wkojiro1.c9users.io/destinations.json?email="+ email +"&token="+ access_token +"";
-
-        InputStream inputStream = null;
-        String result = "";
-
-
-        String name = dest.getDestName();
-        String email = dest.getDestEmail();
-        String address = dest.getDestAddress();
-        // String password2 = user.getPassword();
-
-        final String json =
-                "{" +
-                        "\"destname\":\"" + name + "\"," +
-                        "\"destemail\":\"" + email + "\"," +
-                        "\"destaddress\":\"" + address + "\"" +
-                "}";
-
-        try {
-
-            URL url = new URL(urlString); //URLを生成
-            con = (HttpURLConnection) url.openConnection(); //HttpURLConnectionを取得する
-            con.setRequestMethod("POST");
-            con.setInstanceFollowRedirects(false); // HTTP リダイレクト (応答コード 3xx の要求) を、この HttpURLConnection インスタンスで自動に従うかどうかを設定します。
-            con.setRequestProperty("Accept-Language", "jp");
-            con.setDoOutput(true); //この URLConnection の doOutput フィールドの値を、指定された値に設定します。→イマイチよく理解できない（URL 接続は、入力または出力、あるいはその両方に対して使用できます。URL 接続を出力用として使用する予定である場合は doOutput フラグを true に設定し、そうでない場合は false に設定します。デフォルトは false です。）
-            con.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-
-            // リスエストの送信
-            OutputStream os = con.getOutputStream(); //この接続に書き込みを行う出力ストリームを返します
-            con.connect();
-            // con.getResponseCode();
-
-            PrintStream ps = new PrintStream(os); //行の自動フラッシュは行わずに、指定のファイルで新しい出力ストリームを作成します。
-            ps.print(json);// JsonをPOSTする
-            ps.close();
-            status = con.getResponseCode();
-            Log.d("結果",String.valueOf(status));
-            //if(status == HttpURLConnection.HTTP_OK) {
-            if(status/100 == 2){
-                //多分ここからResponseのための器をつくっている。
-                //戻り値の指定をしないと動かないのかな？
-
-                reader = new BufferedReader(new InputStreamReader(con.getInputStream(), "UTF-8"));//デフォルトサイズのバッファーでバッファリングされた、文字型入力ストリームを作成します。
-                String line = reader.readLine();
-                while (line != null) {
-                    jsonData.append(line);
-                    line = reader.readLine();
-                }
-
-                System.out.println(jsonData.toString());
-
-                // JSON to Java
-                Gson gson = new Gson();
-                dest = gson.fromJson(jsonData.toString(), Dest.class);
-
-                if (dest != null) {
-                    res_destid = dest.getId();
-                    res_destpositionid = dest.getPositionId();
-                    res_destname = dest.getDestName();
-                    res_destemail = dest.getDestEmail();
-                    res_destaddress = dest.getDestAddress();
-                    res_destlatitude = dest.getDestLatitude();
-                    res_destlongitude = dest.getDestLongitude();
-
-                    System.out.println("ID = " + res_destid);
-                    System.out.println("positionID = " + dest.getPositionId());
-
-                }
-            }
-            con.disconnect();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (ProtocolException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        // mProgress.dismiss();
-
-        if (status/100 == 2){
-            result2 = "OK";
-        } else {
-            result2 = "NG";
-        }
-
-
-
-        // return result
-        return result2;
-
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -349,7 +171,7 @@ public class DestActivity extends AppCompatActivity implements SharedPreferences
 
                     if (destname.length() != 0 && destemail.length() != 0 && destaddress.length() != 0) {
 
-                        new DestActivity.createDestination().execute();
+                        new DestActivity.createDestination().execute(destname,destemail,destaddress);
 
                     } else {
                         Log.d("目的地登録エラー", "ddd");
@@ -373,20 +195,62 @@ public class DestActivity extends AppCompatActivity implements SharedPreferences
         });
     }
 
+
     private class editDestination extends AsyncTask<String, Void, String>{
         @Override
         protected String doInBackground(String... params) {
 
-            //Log.d("doinbackground",String.valueOf(mDest.getDestUrl()));
-            Edit(params);
-            //Log.d("dest",String.valueOf(mDest));
-            if(result2.equals("OK")){
-                result = "OK";
+            final MediaType JSON
+                    = MediaType.parse("application/json; charset=utf-8");
 
-            } else {
+            String urlString = params[3] +"?email="+ email +"&token="+ access_token +"";
+
+            final String json =
+                    "{" +
+                            "\"destname\":\"" + params[0] + "\"," +
+                            "\"destemail\":\"" + params[1] + "\"," +
+                            "\"destaddress\":\"" + params[2] + "\"" +
+                    "}";
+
+            RequestBody body = RequestBody.create(JSON, json);
+
+            // リクエストオブジェクトを作って
+            Request request = new Request.Builder()
+                    .url(urlString)
+                    //.header("Authorization", credential)
+                    .put(body)
+                    .build();
+
+            // クライアントオブジェクトを作って
+            OkHttpClient client = new OkHttpClient();
+
+
+
+            // リクエストして結果を受け取って
+            try {
+                okhttp3.Response response = client.newCall(request).execute();
+                Log.d("debug", String.valueOf(response));
+                if (response.isSuccessful()){
+
+                    String jsonData = response.body().string();
+                    //   Log.d("debug", result);
+
+
+                    result = "OK";
+                    Log.d("debug", "doPost success");
+                    //  Log.d("debug", result);
+
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
                 result = "NG";
+                Log.e("hoge", "error orz:" + e.getMessage(), e);
             }
+
+            // 返す
             return result;
+
+
 
         }
         @Override
@@ -400,9 +264,11 @@ public class DestActivity extends AppCompatActivity implements SharedPreferences
 
                 View v = findViewById(android.R.id.content);
                 Snackbar.make(v, "目的地情報を更新しました。", Snackbar.LENGTH_LONG).show();
+
                 resultintent.putExtra("Result","OK");
                 setResult(RESULT_OK,resultintent);
                 Log.d("インテント", String.valueOf(resultintent));
+
                 finish();
             } else {
                 View v = findViewById(android.R.id.content);
@@ -418,19 +284,60 @@ public class DestActivity extends AppCompatActivity implements SharedPreferences
         @Override
         protected String doInBackground(String... params) {
 
+            final MediaType JSON
+                    = MediaType.parse("application/json; charset=utf-8");
+
+            String urlString = "https://rails5api-wkojiro1.c9users.io/destinations.json?email="+ email +"&token="+ access_token +"";
+
+            String result = null;
             dest = new Dest();
-            dest.setDestName(destname);
-            dest.setDestEmail(destemail);
-            dest.setDestAddress(destaddress);
+            dest.setDestName(params[0]);
+            dest.setDestEmail(params[1]);
+            dest.setDestAddress(params[2]);
 
-            Post(dest);
-            Log.d("dest",String.valueOf(dest));
-            if(result2.equals("OK")){
-                result = "OK";
+            final String json =
+                    "{" +
+                            "\"destname\":\"" + params[0] + "\"," +
+                            "\"destemail\":\"" + params[1] + "\"," +
+                            "\"destaddress\":\"" + params[2] + "\"" +
+                     "}";
 
-            } else {
+            RequestBody body = RequestBody.create(JSON, json);
+
+            // リクエストオブジェクトを作って
+            Request request = new Request.Builder()
+                    .url(urlString)
+                    //.header("Authorization", credential)
+                    .post(body)
+                    .build();
+
+            // クライアントオブジェクトを作って
+            OkHttpClient client = new OkHttpClient();
+
+
+
+            // リクエストして結果を受け取って
+            try {
+                okhttp3.Response response = client.newCall(request).execute();
+                Log.d("debug", String.valueOf(response));
+                if (response.isSuccessful()){
+
+                    String jsonData = response.body().string();
+                    //   Log.d("debug", result);
+
+
+                    result = "OK";
+                    Log.d("debug", "doPost success");
+                    //  Log.d("debug", result);
+
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
                 result = "NG";
+                Log.e("hoge", "error orz:" + e.getMessage(), e);
             }
+
+            // 返す
             return result;
 
         }
@@ -439,13 +346,29 @@ public class DestActivity extends AppCompatActivity implements SharedPreferences
         @Override
         protected void onPostExecute(String result) {
             Log.d("Post","done");
+
+
+            Intent resultintent = new Intent();
+
             if(result.equals("OK")) {
                 View v = findViewById(android.R.id.content);
+
+                //memo: 削除されたので、reloadの役割として目的地一覧を取得
+            //    new SettingActivity.getDestinations().execute();
+
+
+                resultintent.putExtra("Result","OK");
+                setResult(RESULT_OK,resultintent);
+                Log.d("インテント", String.valueOf(resultintent));
+
                 Snackbar.make(v, "目的地を追加しました。", Snackbar.LENGTH_LONG).show();
 
                 finish();
             } else {
                 View v = findViewById(android.R.id.content);
+
+                resultintent.putExtra("Result","NG");
+                setResult(RESULT_CANCELED, resultintent);
                 Snackbar.make(v, "目的地を追加することができませんでした。", Snackbar.LENGTH_LONG).show();
 
             }

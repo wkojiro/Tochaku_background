@@ -28,18 +28,18 @@ public class DestAdapter extends BaseAdapter{
     private SettingActivity activity;
     private LayoutInflater mLayoutInflater;
     private ArrayList<Dest> mDestArrayList;
-    Dest RailsRealm;
-    Integer checked_id = -1;
-    Integer rails_id = -1;
-    public Integer selected_position = -1;
+    private Dest RailsRealm;
+    private Dest checked_id;
+    private Integer rails_id = -1;
+    private Integer selected_id = -1;
 
 
-    public DestAdapter(Context context,SettingActivity activity) {
+    protected DestAdapter(Context context, SettingActivity activity) {
         mLayoutInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         this.activity = activity;
     }
 
-    public void setDestArrayList(ArrayList<Dest> destArrayList){
+    protected void setDestArrayList(ArrayList<Dest> destArrayList){
         mDestArrayList = destArrayList;
     }
 
@@ -71,13 +71,139 @@ public class DestAdapter extends BaseAdapter{
         TextView textView3 = (TextView) convertView.findViewById(R.id.emailTextView);
         CheckBox checkBox = (CheckBox) convertView.findViewById(R.id.checkBox);
 
-
-
-        textView1.setText(mDestArrayList.get(position).getDestName() + (mDestArrayList.get(position).getPositionId()));
+        textView1.setText(mDestArrayList.get(position).getDestName() + mDestArrayList.get(position).getPositionId()+ mDestArrayList.get(position).getId());
         textView2.setText(mDestArrayList.get(position).getDestAddress());
         textView3.setText(mDestArrayList.get(position).getDestEmail());
 
-        //checkBox.setChecked(true);
+
+        //memo: 現在保存されている目的地がどれかを確認し、該当するところにCheckする。
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this.activity);
+
+        //memo: 現状はPositionKeyを保存しているから、これで条件分岐しているが本来はRailsIdで検索すべき。
+        //memo: もし、すでに保存されている目的地があるのであれば、該当する目的地にチェックをつける
+        if(sp.getInt(Const.RailsKEY,-1) != -1 ){
+
+            rails_id = sp.getInt(Const.RailsKEY,-1);
+
+           // rails_id が含まれるmDestArrayListの案件を検索する。
+           // その案件のpositionを確認する。
+            if(mDestArrayList.get(position).getId() == rails_id){
+                checkBox.setChecked(true);
+            } else {
+
+                checkBox.setChecked(false);
+            }
+        }
+
+        //memo: CheckBoxが選択された段階で、わかることは何番めがクリックされた、というだけ。
+        // ここからどの案件と特定するには、やはり、Position_idで比較するしかない？
+        /*
+
+
+
+         */
+        checkBox.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                CheckBox cb = (CheckBox) v;
+
+                if(cb.isChecked())
+                {
+                  //  selected_id = position ;
+
+                   // cb.setChecked(false);
+
+                   // Realm realm = Realm.getDefaultInstance();
+
+                    //memo: destIdで検索して当該のデータを取得 positionは０はじまり、position_idは１はじまりだから＋１する。
+                    //memo: Checkされた順番が１だったら、Position_idが１のものもを取得する。
+                    //memo: つまり、昇順降順が変わってもPositionは変わらないから、選択したものと異なるものが返ってきてしまう。
+
+                    /*
+                     Realm  ASENDING
+                       ID  Position_id   ListViewの物理的なPosition
+                       　　　　　　　　　　　　
+                       1      1　　　　　　　　　　1
+                       4      2                 2
+                       5      3                 3
+                       8      4                 4
+
+                       現状は、positionが１だからPosition_idが１と一致するから、１を導き出す。
+
+
+                      Realm  DESENDING
+                       ID  Position_id   ListViewの物理的なPosition
+                       　　　　　　　　　　　　
+                       8      4　　　　　　　　　　1 本来であれば「８」を読んで欲しいが「１」を読んでしまう。
+                       5      3                 2
+                       4      2                 3
+                       1      1                 4
+
+
+
+                     */
+
+                    //これが正解
+                    selected_id = mDestArrayList.get(position).getId();
+                    Log.d("destID", String.valueOf(selected_id));
+
+
+
+                    /*
+                    RailsRealm = realm.where(Dest.class).equalTo("id", selected_id + 1 ).findFirst();
+                    realm.close();
+                    Log.d("RailsRealm", "物理的なPosition"+position +"+1とRealmで保持しているposition_id"+String.valueOf(RailsRealm.getPositionId())+"が一致した案件は、"+String.valueOf(RailsRealm.getId())+"であった。");
+                    Log.d("RailsRealm", String.valueOf(RailsRealm.getId()));
+                    Log.d("RailsRealm", String.valueOf(RailsRealm));
+                   selected_id = RailsRealm.getId();
+                   */
+
+
+                    activity.addDestination(selected_id);
+
+                }
+                else
+                {
+
+                    selected_id = -1;
+                }
+                notifyDataSetChanged();
+            }
+        });
+
+
+
+
+
+
+        /*
+
+        主な仕様
+
+        ・API GETしてきた目的地のリストをRealmに保存して、ListViewに表示する。
+        ・CheckBoxにチェックされた目的地をPreferenceに保存する。
+        ・変更されるまでは、その目的地にCheckされたままにする。
+        ・目的地が変更や追加されても、当然ながら同じものにCheckされる。
+        ・Checkは一つしかできない。
+        ・Checkしたものが削除されたら何もCheckしない状態となる。
+
+        ・現状は、Position_idでやっているが、RailsIdでやらないとソート順（昇順降順など）を変えたりすると整合性が合わなくなる。
+
+
+        注意事項：
+
+        ・ListViewの仕様で、画面の外にはみ出した行を見た後で戻るときえてしまう。
+        http://qiita.com/kikuchy/items/c3288381f471faa17c31
+
+         */
+
+
+
+
+        //
+        //この部分のリファクタリング中
+        //
+        /*
 
         Log.d("checked", String.valueOf(mDestArrayList.get(position).getPositionId()));
         Log.d("ID", String.valueOf(mDestArrayList.get(position).getId()));
@@ -114,11 +240,14 @@ public class DestAdapter extends BaseAdapter{
             }
         }
 
+
+
+        //memo:　CheckBoxがチェックされた時
         checkBox.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 CheckBox cb = (CheckBox) v;
-                if(cb.isChecked() == true)
+                if(cb.isChecked())
                 {
                     selected_position = position ;
                     //Context context = parent.getContext();
@@ -138,13 +267,20 @@ public class DestAdapter extends BaseAdapter{
             }
         });
 
-      //  checkBox.setChecked(position == selected_position);
-     //   Log.d("3selected_position最終", String.valueOf(selected_position));
-     //   Log.d("4position最終", String.valueOf(position));
+        */
+        //
+        //
+        //
+
+
+
 
 
 
         return convertView;
+
+
+
     }
 
 
