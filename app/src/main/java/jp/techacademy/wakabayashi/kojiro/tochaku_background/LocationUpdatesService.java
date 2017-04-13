@@ -466,12 +466,14 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
 
             String nowlatitude = String.valueOf(currentlatitude);
             String nowlongitude = String.valueOf(currentlongitude);
+           /*
             try {
                 new RailsApi().postMailAsync(destname, destemail, nowlatitude, nowlongitude);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            //new mailSet().execute(destname, destemail, String.valueOf(currentlatitude), String.valueOf(currentlongitude));
+            */
+            new mailSet().execute(destname, destemail, String.valueOf(currentlatitude), String.valueOf(currentlongitude));
             Toast.makeText(this, "全行程の７０％を通過しました。", Toast.LENGTH_LONG).show();
 
             mailCount = 1;
@@ -488,7 +490,7 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
 
 
     }
-/*
+
     public class mailSet extends AsyncTask<String, Void, Void> {
         @Override
         protected Void doInBackground(String... params) {
@@ -505,9 +507,7 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
 
 
         }
-    }*/
-
-    /*
+    }
     public String PostMail(String[] params){
         HttpURLConnection con = null;//httpURLConnectionのオブジェクトを初期化している。
         BufferedReader reader = null;
@@ -573,5 +573,5 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
 
         return result;
     }
-*/
+
 }

@@ -84,7 +84,7 @@ public class DestAdapter extends BaseAdapter{
 
         //memo: 現状はPositionKeyを保存しているから、これで条件分岐しているが本来はRailsIdで検索すべき。
         //memo: もし、すでに保存されている目的地があるのであれば、該当する目的地にチェックをつける
-        if(sp.getInt(Const.RailsKEY,-1) != -1 ){
+        if(sp.getString(Const.DestnameKEY,"") != "" ){
 
             rails_id = sp.getInt(Const.RailsKEY,-1);
 

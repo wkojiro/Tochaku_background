@@ -310,6 +310,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                                 if (mailCount == 0) {
                                     Toast.makeText(MainActivity.this, "メール" + mStatus, Toast.LENGTH_LONG).show();
                                     Toast.makeText(MainActivity.this, "出発地" + currentlatitude + currentlongitude, Toast.LENGTH_LONG).show();
+
                                     try {
                                         new RailsApi().postMailAsync(destname, destemail, String.valueOf(currentlatitude), String.valueOf(currentlongitude));
                                     } catch (IOException e) {
