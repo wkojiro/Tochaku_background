@@ -55,7 +55,10 @@ public class DestAdapter extends BaseAdapter{
 
     @Override
     public long getItemId(int position) {
-        return 0;
+
+            return 0;
+        //memo: これあってる。
+        //return mDestArrayList.get(position);
     }
 
     @Override
@@ -185,7 +188,7 @@ public class DestAdapter extends BaseAdapter{
         ・変更されるまでは、その目的地にCheckされたままにする。
         ・目的地が変更や追加されても、当然ながら同じものにCheckされる。
         ・Checkは一つしかできない。
-        ・Checkしたものが削除されたら何もCheckしない状態となる。
+        ・Checkしたものが削除されたら何もCheckしない状態となる。(これをするとその時点でPreferenceからも削除する必要がある！？）
 
         ・現状は、Position_idでやっているが、RailsIdでやらないとソート順（昇順降順など）を変えたりすると整合性が合わなくなる。
 
@@ -196,83 +199,6 @@ public class DestAdapter extends BaseAdapter{
         http://qiita.com/kikuchy/items/c3288381f471faa17c31
 
          */
-
-
-
-
-        //
-        //この部分のリファクタリング中
-        //
-        /*
-
-        Log.d("checked", String.valueOf(mDestArrayList.get(position).getPositionId()));
-        Log.d("ID", String.valueOf(mDestArrayList.get(position).getId()));
-
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this.activity);
-       // checked_id = sp.getInt(Const.PositionKey,-1) - 1;
-        if(sp.getInt(Const.PositionKey,-1) != -1){
-            Log.d("aa","dd");
-
-
-        rails_id = sp.getInt(Const.RailsKEY,-1);
-
-
-            Log.d("checked_id", String.valueOf(checked_id));
-            Log.d("保存されたRailsID", String.valueOf(rails_id));
-
-
-        //memo: 最新のRealmとRailsIDの同期をとる
-        Realm realm = Realm.getDefaultInstance();
-
-        //memo: destIdで検索して当該のデータを取得 positionは０はじまり、position_idは１はじまりだから＋１する。
-        RailsRealm = realm.where(Dest.class).equalTo("id", rails_id ).findFirst();
-        realm.close();
-
-        checked_id = RailsRealm.getPositionId() -1;
-
-      //  if (selected_position == position || checked_id == position) {
-            if(checked_id == position){
-                checkBox.setChecked(true);
-
-            } else {
-                checkBox.setChecked(false);
-
-            }
-        }
-
-
-
-        //memo:　CheckBoxがチェックされた時
-        checkBox.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                CheckBox cb = (CheckBox) v;
-                if(cb.isChecked())
-                {
-                    selected_position = position ;
-                    //Context context = parent.getContext();
-                  //  Snackbar.make(v, "目的地を設定しました", Snackbar.LENGTH_LONG).show();
-
-
-                   // String result3 = "OK";
-                    //memo: 親activityのメソッドを呼んでいる
-                    activity.addDestination(selected_position);
-
-                }
-                else
-                {
-                    selected_position = -1;
-                }
-                notifyDataSetChanged();
-            }
-        });
-
-        */
-        //
-        //
-        //
-
-
 
 
 

@@ -310,8 +310,12 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                                 if (mailCount == 0) {
                                     Toast.makeText(MainActivity.this, "メール" + mStatus, Toast.LENGTH_LONG).show();
                                     Toast.makeText(MainActivity.this, "出発地" + currentlatitude + currentlongitude, Toast.LENGTH_LONG).show();
-
-                                    new commingmail().execute(destname, destemail, String.valueOf(currentlatitude), String.valueOf(currentlongitude));
+                                    try {
+                                        new RailsApi().postMailAsync(destname, destemail, String.valueOf(currentlatitude), String.valueOf(currentlongitude));
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                    //new commingmail().execute(destname, destemail, String.valueOf(currentlatitude), String.valueOf(currentlongitude));
                                 }
                                 mailCount = 1;
 
@@ -799,16 +803,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         //memo:　現在位置をセット
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
+
+        //noinspection MissingPermission
         mMap.setMyLocationEnabled(true);
 
         currentlatlng = new LatLng(currentlatitude, currentlongitude);
@@ -823,7 +819,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         //memo:　目的地と現在位置に線を引く（Routeでは無いからあんまり意味ない 、この間に移動を感知すると何回も線を引いてしまう。）
 
         /* hide for background */
-        if(polylineFinal != null) {
+        if (polylineFinal != null) {
 
             polylineFinal.remove();
         }
@@ -839,13 +835,12 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         //memo:　目的地と現在位置の距離を取る
         float[] results = new float[1];
         Location.distanceBetween(destlatitude, destlongitude, currentlatitude, currentlongitude, results);
-        Toast.makeText(getApplicationContext(), "距離：" + ( (Float)(results[0]/1000) ).toString() + "Km", Toast.LENGTH_LONG).show();
+        Toast.makeText(getApplicationContext(), "距離：" + ((Float) (results[0] / 1000)).toString() + "Km", Toast.LENGTH_LONG).show();
 
-        originaldistance = results[0]/1000;
+        originaldistance = results[0] / 1000;
 
 
         referencedistance = originaldistance * 0.3;
-
 
 
         mDestTextView.setText("目的地までの距離：" + originaldistance + "Km");
@@ -854,7 +849,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         builder.include(destmarker.getPosition());
         builder.include(currentMarker.getPosition());
         LatLngBounds bounds = builder.build();
-        mMap.setPadding( 50,250,50,250); //   left,        top,       right,  bottom
+        mMap.setPadding(50, 250, 50, 250); //   left,        top,       right,  bottom
         CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, 120);
 
         mMap.moveCamera(cu);
@@ -868,7 +863,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             currentMarker.remove();
         }
         // 設定の取得
-        UiSettings  settings = mMap.getUiSettings();
+        UiSettings settings = mMap.getUiSettings();
         settings.setZoomControlsEnabled(true);
 
         currentlatitude = mCurrentLocation.getLatitude();
@@ -882,16 +877,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         setMarker(destlatitude, destlongitude);
 
         //memo:　現在位置をセット
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
+
+        //noinspection MissingPermission,ResourceType
         mMap.setMyLocationEnabled(true);
         currentlatlng = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
         currentMarkerOptions.position(currentlatlng);
