@@ -125,9 +125,14 @@ public class LoginActivity extends AppCompatActivity implements SharedPreference
 
                 if (email.length() != 0 && password.length() >= 6 ) {
 
-                    mProgress.show();
+                   // mProgress.show();
 
-                    new createAccount().execute(username ,email , password);
+                   // new createAccount().execute(username ,email , password);
+
+                    String result = new RailsApi().createAccountAsync(username,email,password).getResult();
+                    if(result == "OK"){
+                        saveUserdata();
+                    }
 
                 } else {
 
@@ -153,9 +158,9 @@ public class LoginActivity extends AppCompatActivity implements SharedPreference
                 if (email.length() != 0 && password.length() >= 6) {
 
                     // プログレスダイアログを表示する
-                    mProgress.show();
-                    new loginAccount().execute(email , password);
-
+                   // mProgress.show();
+                   // new loginAccount().execute(email , password);
+                    new RailsApi().loginAsync(email,password);
 
                   //  login(email, password);
                 } else {
