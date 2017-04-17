@@ -178,7 +178,8 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
 
                 Log.d("ログアウトボタン","ログアウト");
 
-                new logout().execute();
+               // new logout().execute();
+                new RailsApi(SettingActivity.this).logoutAsync(apiemail,apitoken);
 
 
             }
@@ -188,10 +189,15 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
         mProgress.show();
 
         //memo: 目的地一覧を取得
-        new getDestinations().execute();
+      //  new getDestinations().execute();
+
+        new RailsApi(SettingActivity.this).getDirectionsAsync(apiemail,apitoken);
+
+        mProgress.dismiss();
 
         //memo: 現在保存されているRealmの中身を取得＆並べ替え
         mRealm = Realm.getDefaultInstance();
+
 
 
          /*
@@ -269,7 +275,11 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         //Rails側削除
-                        new deletedest().execute(String.valueOf(dest.getDestUrl()));
+                     //   new deletedest().execute(String.valueOf(dest.getDestUrl()));
+
+                        String url = String.valueOf(dest.getDestUrl());
+
+                        new RailsApi(SettingActivity.this).deleteDirectionAsync(apiemail,apitoken,url);
 
                     }
                 });
@@ -342,6 +352,7 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
        // reloadListView();
     }
 
+    /*
     private class deletedest extends AsyncTask<String, Void, String>{
         @Override
         protected String doInBackground(String... params){
@@ -551,6 +562,7 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
             }
         }
     }
+    */
 
     public void addDestination(Integer selected_id) {
         Log.d("selected_position",String.valueOf(selected_id));
@@ -634,7 +646,11 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
                     //memo: 目的地一覧を取得
                     String returnValue = data.getStringExtra("Result");
                     Log.d("戻ってきた", returnValue);
-                    new getDestinations().execute();
+                   // new getDestinations().execute();
+
+                    new RailsApi(SettingActivity.this).getDirectionsAsync(apiemail,apitoken);
+
+
                     // Log.v("Edit Text", data.getExtra("INPUT_STRING"));
                 } else if (resultCode == RESULT_CANCELED) {
                     //キャンセルボタンを押して戻ってきたときの処理

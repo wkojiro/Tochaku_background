@@ -312,7 +312,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                                     Toast.makeText(MainActivity.this, "出発地" + currentlatitude + currentlongitude, Toast.LENGTH_LONG).show();
 
                                    // try {
-                                        new RailsApi().postMailAsync(email,access_token,destname, destemail, String.valueOf(currentlatitude), String.valueOf(currentlongitude));
+                                        new RailsApi(MainActivity.this).postMailAsync(email,access_token,destname, destemail, String.valueOf(currentlatitude), String.valueOf(currentlongitude));
                                   //  } catch (IOException e) {
                                    //     e.printStackTrace();
                                   //  }
@@ -954,72 +954,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
     }
 
-
-    private class commingmail extends AsyncTask<String, Void, Void> {
-        @Override
-        protected Void doInBackground(String... params) {
-
-            final MediaType JSON
-                    = MediaType.parse("application/json; charset=utf-8");
-
-            String urlString = "https://rails5api-wkojiro1.c9users.io/trackings.json?email="+ email +"&token="+ access_token +"";
-            String result = null;
-
-            final String json =
-                    "{" +
-                            "\"destname\":\"" + params[0] + "\"," +
-                            "\"destemail\":\"" + params[1] + "\"," +
-                            "\"destaddress\":\"\"," +
-                            "\"nowlatitude\":\"" + params[2] + "\"," +
-                            "\"nowlongitude\":\"" + params[3] + "\"" +
-                    "}";
-
-
-            RequestBody body = RequestBody.create(JSON, json);
-
-            // リクエストオブジェクトを作って
-            Request request = new Request.Builder()
-                    .url(urlString)
-                    //.header("Authorization", credential)
-                    .post(body)
-                    .build();
-
-            // クライアントオブジェクトを作って
-            OkHttpClient client = new OkHttpClient();
-
-            // リクエストして結果を受け取って
-            try {
-                Response response = client.newCall(request).execute();
-                Log.d("debug", String.valueOf(response));
-                if (response.isSuccessful()){
-                    //memo: resultにresponcedataが全部入っている。
-                    /*
-                    {"id":136,"destname":"武蔵境","destemail":"wkojiro@eazydrive.co.jp","destaddress":"","nowlatitude":35.7066,"nowlongitude":139.578,"created_at":"2017-04-11T00:33:12.598Z","updated_at":"2017-04-11T00:33:12.598Z","url":"https://rails5api-wkojiro1.c9users.io/trackings/136.json"}
-                     */
-                    result = response.body().string();
-                    Log.d("debug", "doPost success");
-                    Log.d("debug", result);
-
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-                Log.e("hoge", "error orz:" + e.getMessage(), e);
-            }
-
-            // 返す
-            return null;
-
-
-        }
-
-        @Override
-        protected void onPostExecute(Void result){
-
-
-
-        }
-
-    }
 
 
 
