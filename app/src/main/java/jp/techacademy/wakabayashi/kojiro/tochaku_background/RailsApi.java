@@ -212,7 +212,7 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
 
 
     //createAccount Or Login
-   private Task<String> saveUserdata(String jsonData) {
+    protected Task<String> saveUserdata(String jsonData) {
   // public void saveUserdata(){
        final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
 

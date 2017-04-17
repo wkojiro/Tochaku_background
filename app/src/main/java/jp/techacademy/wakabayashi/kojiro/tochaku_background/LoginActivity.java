@@ -141,22 +141,37 @@ public class LoginActivity extends AppCompatActivity implements SharedPreference
                     // プログレスダイアログを表示する
                    mProgress.show();
 
-                   new RailsApi(LoginActivity.this,mProgress).loginRequests(email,password).onSuccess(new Continuation<String, Task<Void>>() {
+                   new RailsApi(LoginActivity.this,mProgress).loginAsync(email,password).onSuccessTask(new Continuation<String, Task<String>>() {
                        @Override
-                       public Task<Void> then(Task<String> task) throws Exception {
+                       public Task<String> then(Task<String> task) throws Exception {
                            final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
+                           taskresult.setResult("OK");
 
-                            mProgress.dismiss();
+
+                           return new RailsApi(LoginActivity.this,mProgress).saveUserdata(task.getResult());
+                       }
+                   }).onSuccess(new Continuation<String, Task<String>>() {
+                       @Override
+                       public Task<String> then(Task<String> task) throws Exception {
+
+                           mProgress.dismiss();
 
                            Toast.makeText(LoginActivity.this,"ログインしました",Toast.LENGTH_SHORT).show();
 
                            finish();
+
                            return null;
                        }
                    });
                   //  new ApiTask(LoginActivity.this,mProgress).loginAsync(email,password);
 
+                    /*
+                    mProgress.dismiss();
 
+                    Toast.makeText(LoginActivity.this,"ログインしました",Toast.LENGTH_SHORT).show();
+
+                    finish();
+                    */
 
 
 
