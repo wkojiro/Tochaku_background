@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.google.gson.Gson;
 
@@ -159,7 +158,7 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
 
     public Task<String> loginAsync(String email, String password) {
 
-        final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
+        final TaskCompletionSource taskresult = new TaskCompletionSource<>();
 
         final MediaType JSON
                 = MediaType.parse("application/json; charset=utf-8");
@@ -174,7 +173,7 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
         final String json =
                 "{\"user\":{" +
                         "\"email\":\"" + email + "\"," +
-                        "\"password\":\""+ password + "\"" +
+                        "\"password\":\"" + password + "\"" +
                         "}" +
                 "}";
 
@@ -189,7 +188,40 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
 
         // クライアントオブジェクトを作って
         OkHttpClient client = new OkHttpClient();
+
+
+        // リクエストして結果を受け取って
+    /*
+    この書き方（try catch execute系）は、
+    okhttp3.Response response = client.newCall(request).execute(); ここでエラーになる
+
+     */
+    /*
+        try {
+            okhttp3.Response response = client.newCall(request).execute();
+            Log.d("debug", String.valueOf(response));
+            if (response.isSuccessful()) {
+
+                String jsonData = response.body().string();
+                taskresult.setResult(jsonData);
+
+            } else {
+                taskresult.setError(new HttpException(response.code()));
+            }
+        } catch (IOException e) {
+            taskresult.setError(e);
+            Log.e("hoge", "error orz:" + e.getMessage(), e);
+        }
+
+        return taskresult.getTask();
+
+    }
+    */
+
+
         client.newCall(request).enqueue(new Callback() {
+
+
 
             @Override
             public void onFailure(Call call, IOException e) {
@@ -202,12 +234,16 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
                 if (response.isSuccessful()) {
                     String jsonData = response.body().string();
                     taskresult.setResult(jsonData);
+                }else{
+                    taskresult.setError(new HttpException(response.code()));;
+
                 }
             }
 
         });
-        Log.d("debug", "LoginUserResponce");
+
         return taskresult.getTask();
+
     }
 
 
@@ -248,7 +284,7 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
        return taskresult.getTask();
    }
 
-
+/*
    public Task<String> loginRequests(String email, String password) {
        final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
   //      final String[] result = {""};
@@ -284,7 +320,9 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
        taskresult.setResult("OK");
        return taskresult.getTask();
     }
+    */
 
+/*
     public Task<String> createAccountRequests(String username, String email, String password) {
         final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
         //      final String[] result = {""};
@@ -322,7 +360,7 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
         return taskresult.getTask();
     }
 
-
+*/
     public Task<Void> editAccountAsync(String email, String access_token){
 
         return null;
@@ -369,6 +407,7 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 String s = "OK";
+                Log.d("debug",response.toString());
                 if (response.isSuccessful()) {
                     taskresult.setResult(s);
 

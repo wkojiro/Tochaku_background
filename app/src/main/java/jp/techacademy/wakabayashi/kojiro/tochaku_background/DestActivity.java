@@ -172,7 +172,7 @@ public class DestActivity extends AppCompatActivity implements SharedPreferences
                     if (destname.length() != 0 && destemail.length() != 0 && destaddress.length() != 0) {
 
                        // new DestActivity.createDestination().execute(destname,destemail,destaddress);
-                        new RailsApi(DestActivity.this).createDirectionAsync(email,access_token,destname,destemail,destaddress);
+                      //  new RailsApi(DestActivity.this).createDirectionAsync(email,access_token,destname,destemail,destaddress);
                     } else {
                         Log.d("目的地登録エラー", "ddd");
                         // エラーを表示する
@@ -188,7 +188,7 @@ public class DestActivity extends AppCompatActivity implements SharedPreferences
                     desturl = mDest.getDestUrl();
                     Log.d("更新登録", desturl);
                     //    new DestActivity.editDestination().execute(destname,destemail,destaddress,desturl);
-                    new RailsApi(DestActivity.this).editDirectionAsync(email, access_token, destname, destemail, destaddress, desturl);
+                  //  new RailsApi(DestActivity.this).editDirectionAsync(email, access_token, destname, destemail, destaddress, desturl);
                 }
             }
 

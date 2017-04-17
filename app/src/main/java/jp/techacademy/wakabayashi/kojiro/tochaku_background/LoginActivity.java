@@ -150,19 +150,35 @@ public class LoginActivity extends AppCompatActivity implements SharedPreference
 
                            return new RailsApi(LoginActivity.this,mProgress).saveUserdata(task.getResult());
                        }
-                   }).onSuccess(new Continuation<String, Task<String>>() {
+                   }).onSuccess(new Continuation<String, String>() {
                        @Override
-                       public Task<String> then(Task<String> task) throws Exception {
+                       public String then(Task<String> task) throws Exception {
 
-                           mProgress.dismiss();
-
+                          // mProgress.dismiss();
+                           Log.d("hoge", "hoge");
                            Toast.makeText(LoginActivity.this,"ログインしました",Toast.LENGTH_SHORT).show();
 
                            finish();
 
                            return null;
                        }
-                   });
+                   }).continueWith(new Continuation<String, Task<Void>>() {
+                        @Override
+                        public Task<Void> then(Task<String> task) throws Exception{
+
+                            mProgress.dismiss();
+                            //finish();
+
+                            if (task.isFaulted()) {
+                                Exception e = task.getError();
+
+                                Log.d("debug2",e.toString());
+                                Log.e("hoge","error", e);
+                                //エラー処理
+                            }
+                            return null;
+                        }
+                    });
                   //  new ApiTask(LoginActivity.this,mProgress).loginAsync(email,password);
 
                     /*

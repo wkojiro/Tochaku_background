@@ -191,7 +191,7 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
         //memo: 目的地一覧を取得
       //  new getDestinations().execute();
 
-        new RailsApi(SettingActivity.this).getDirectionsAsync(apiemail,apitoken);
+       // new RailsApi(SettingActivity.this).getDirectionsAsync(apiemail,apitoken);
 
         mProgress.dismiss();
 
@@ -279,7 +279,7 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
 
                         String url = String.valueOf(dest.getDestUrl());
 
-                        new RailsApi(SettingActivity.this).deleteDirectionAsync(apiemail,apitoken,url);
+                        //new RailsApi(SettingActivity.this).deleteDirectionAsync(apiemail,apitoken,url);
 
                     }
                 });
@@ -648,7 +648,7 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
                     Log.d("戻ってきた", returnValue);
                    // new getDestinations().execute();
 
-                    new RailsApi(SettingActivity.this).getDirectionsAsync(apiemail,apitoken);
+                  //  new RailsApi(SettingActivity.this).getDirectionsAsync(apiemail,apitoken);
 
 
                     // Log.v("Edit Text", data.getExtra("INPUT_STRING"));
