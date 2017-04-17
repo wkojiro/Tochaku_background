@@ -133,24 +133,11 @@ public class LoginActivity extends AppCompatActivity implements SharedPreference
                     // プログレスダイアログを表示する
                     mProgress.show();
 
-                 new RailsApi(LoginActivity.this,mProgress).loginRequests(email,password);
+                   new RailsApi(LoginActivity.this,mProgress).loginRequests(email,password);
 
-                    /*
-                    Log.d("debug", result);
-
-
-                    if(result.equals("OK")){
-
-                        Toast.makeText(LoginActivity.this,"ログインしました。",Toast.LENGTH_SHORT).show();
-                        mProgress.dismiss();
                         finish();
 
-                    } else {
 
-                        Toast.makeText(LoginActivity.this,"ログインに失敗しました。",Toast.LENGTH_SHORT).show();
-                        mProgress.dismiss();
-                    }
-                    */
 
 
                 } else {

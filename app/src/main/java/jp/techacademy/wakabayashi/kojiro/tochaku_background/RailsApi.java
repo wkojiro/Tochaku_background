@@ -251,7 +251,7 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
 
 
    public Task<String> loginRequests(String email, String password) {
-      // final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
+       final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
   //      final String[] result = {""};
         loginAsync(email, password).onSuccessTask(new Continuation<String, Task<String>>() {
             @Override
@@ -273,34 +273,17 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
             @Override
             public Task<String> then(Task<String> task) throws Exception {
                 final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
-                /*
-                if(task.isCancelled()){
-                    //task cancelled
-                } else if(task.isFaulted()){
-                    Exception error = task.getError();
 
-                    Toast.makeText(mContext,"ログインできませんでした",Toast.LENGTH_SHORT).show();
-                } else {
-                    // String taskresult = task.getResult();
-                    taskresult.setResult("OK");
-                    Log.d("debug", "SaveUserInfoDone");
-                    Log.d("debug", task.getResult());
-                    Toast.makeText(mContext,"ログインしました",Toast.LENGTH_SHORT).show();
-
-                    mProgress.dismiss();
-                }*/
                 mProgress.dismiss();
 
                Toast.makeText(mContext,"ログインしました",Toast.LENGTH_SHORT).show();
-
-
                 return taskresult.getTask();
             }
         });
 
        // return result[0];
-       //taskresult.setResult("OK");
-       return null;
+       taskresult.setResult("OK");
+       return taskresult.getTask();
     }
 
     public Task<String> createAccountRequests(String username, String email, String password) {
