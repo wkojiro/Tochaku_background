@@ -140,8 +140,8 @@ public class LoginActivity extends AppCompatActivity implements SharedPreference
 
                     // プログレスダイアログを表示する
                    mProgress.show();
-
-                   new RailsApi(LoginActivity.this,mProgress).loginAsync(email,password).onSuccessTask(new Continuation<String, Task<String>>() {
+                    //new RailsApi(LoginActivity.this,mProgress).loginRequests(email,password).onSuccessTask(new Continuation<String, Task<String>>()
+                    new RailsApi(LoginActivity.this,mProgress).loginAsync(email,password).onSuccessTask(new Continuation<String, Task<String>>() {
                        @Override
                        public Task<String> then(Task<String> task) throws Exception {
                            final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
