@@ -218,7 +218,6 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
 
        Gson gson = new Gson();
 
-
        user = gson.fromJson(jsonData, User.class);
        if (user != null) {
            res_id = user.getUid();
@@ -269,19 +268,19 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
 
                 return saveUserdata(task.getResult());
             }
-        }).onSuccess(new Continuation<String, Task<String>>() {
+        }).onSuccess(new Continuation<String, Task<Void>>() {
             @Override
-            public Task<String> then(Task<String> task) throws Exception {
+            public Task<Void> then(Task<String> task) throws Exception {
                 final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
 
-                mProgress.dismiss();
+               // mProgress.dismiss();
 
                Toast.makeText(mContext,"ログインしました",Toast.LENGTH_SHORT).show();
-                return taskresult.getTask();
+                return null;
             }
         });
 
-       // return result[0];
+       //memo: 本来はここで切り分けたい。
        taskresult.setResult("OK");
        return taskresult.getTask();
     }

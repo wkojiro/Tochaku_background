@@ -15,6 +15,7 @@ import android.widget.Toast;
 
 import bolts.Continuation;
 import bolts.Task;
+import bolts.TaskCompletionSource;
 
 
 /*
@@ -91,7 +92,12 @@ public class LoginActivity extends AppCompatActivity implements SharedPreference
                 if (email.length() != 0 && password.length() >= 6 ) {
                     mProgress.show();
 
-                    new RailsApi(LoginActivity.this,mProgress).createAccountAsync(username,email,password);
+                  //  new RailsApi(LoginActivity.this,mProgress).createAccountAsync(username,email,password);
+
+
+
+                    new ApiTask(LoginActivity.this,mProgress).createAccountAsync(username,email,password);
+
 
                     /*
                     if(result.equals("OK")){
@@ -106,6 +112,8 @@ public class LoginActivity extends AppCompatActivity implements SharedPreference
                         mProgress.dismiss();
                     }
                     */
+
+                    finish();
 
                 } else {
 
@@ -131,11 +139,23 @@ public class LoginActivity extends AppCompatActivity implements SharedPreference
                 if (email.length() != 0 && password.length() >= 6) {
 
                     // プログレスダイアログを表示する
-                    mProgress.show();
+                   mProgress.show();
 
-                   new RailsApi(LoginActivity.this,mProgress).loginRequests(email,password);
+                   new RailsApi(LoginActivity.this,mProgress).loginRequests(email,password).onSuccess(new Continuation<String, Task<Void>>() {
+                       @Override
+                       public Task<Void> then(Task<String> task) throws Exception {
+                           final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
 
-                        finish();
+                            mProgress.dismiss();
+
+                           Toast.makeText(LoginActivity.this,"ログインしました",Toast.LENGTH_SHORT).show();
+
+                           finish();
+                           return null;
+                       }
+                   });
+                  //  new ApiTask(LoginActivity.this,mProgress).loginAsync(email,password);
+
 
 
 
