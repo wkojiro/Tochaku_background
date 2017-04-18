@@ -146,6 +146,8 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
                     }
                         //memo: 会員情報をPreferenceに保存
                     //saveUserdata();
+                }else{
+                    taskresult.setError(new HttpException(response.code()));
                 }
 
             }
@@ -156,8 +158,10 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
         return taskresult.getTask();
     }
 
+
     public Task<String> loginAsync(String email, String password) {
 
+        Log.d("Thread","LoginAsync"+Thread.currentThread().getName());
         final TaskCompletionSource taskresult = new TaskCompletionSource<>();
 
         final MediaType JSON
@@ -190,6 +194,29 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
         OkHttpClient client = new OkHttpClient();
 
 
+        /* 本来はこう言う書き方をすべき？
+        // OKHTTPとの相性の問題か！？
+        taskresult.InBackground(new GetCallback() {
+            public void done(ParseObject object, ParseException e) {
+                if (e == null) {
+                    tcs.setResult(object);
+                } else {
+                    tcs.setError(e);
+                }
+            }
+        });
+
+        client.callInBackground(new Callable<Void>() {
+            public Void call() {
+                // Do a bunch of stuff.
+            }
+        }).continueWith(...);
+
+        */
+
+
+
+
         // リクエストして結果を受け取って
     /*
     この書き方（try catch execute系）は、
@@ -218,6 +245,7 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
     }
     */
 
+    //memo: 書き方Part2　（これもOKHTTP踏襲だからうまくいかない！？）
 
         client.newCall(request).enqueue(new Callback() {
 
@@ -231,11 +259,13 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 //String s = "OK";
+
+                Log.d("Thread","LoginAsynconResponce"+Thread.currentThread().getName());
                 if (response.isSuccessful()) {
                     String jsonData = response.body().string();
                     taskresult.setResult(jsonData);
                 }else{
-                    taskresult.setError(new HttpException(response.code()));;
+                    taskresult.setError(new HttpException(response.code()));
 
                 }
             }
@@ -249,6 +279,8 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
 
     //createAccount Or Login
     protected Task<String> saveUserdata(String jsonData) {
+
+        Log.d("Thread","SaveUserdata"+Thread.currentThread().getName());
   // public void saveUserdata(){
        final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
 
@@ -830,5 +862,9 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
 
+    }
+
+    private String isCurrent(){
+        return Thread.currentThread().getName();
     }
 }
