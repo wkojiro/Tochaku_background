@@ -13,10 +13,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Color;
-import android.os.AsyncTask;
 import android.preference.PreferenceManager;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -28,35 +25,22 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-
-import java.io.IOException;
 
 import java.util.ArrayList;
 
 
 
 //Realm関連
+import bolts.Continuation;
+import bolts.Task;
 import io.realm.Realm;
 import io.realm.RealmChangeListener;
 import io.realm.RealmResults;
 import io.realm.Sort;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
 
 public class SettingActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
 
@@ -179,8 +163,41 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
                 Log.d("ログアウトボタン","ログアウト");
 
                // new logout().execute();
-                new RailsApi(SettingActivity.this).logoutAsync(apiemail,apitoken);
+                new RailsApi(SettingActivity.this).logoutAsync(apiemail,apitoken).onSuccessTask(new Continuation<String, Task<String>>(){
+                    @Override
+                    public Task<String> then(Task<String> task) throws Exception {
 
+
+                        return new RailsApi(SettingActivity.this).deleteUserdata();
+                    }
+
+                }).onSuccess(new Continuation<String, String>(){
+                    @Override
+                    public String then(Task<String> task) throws Exception {
+
+                        Toast.makeText(SettingActivity.this,"ログアウトしました。",Toast.LENGTH_SHORT).show();
+                        finish();
+                    return null;
+                    }
+                }, Task.UI_THREAD_EXECUTOR).continueWith(new Continuation<String, String>() {
+                    @Override
+                    public String then(Task<String> task) throws Exception {
+                        Log.d("Thread","LoginActLoginContinuewwith"+Thread.currentThread().getName());
+                        mProgress.dismiss();
+                        //finish();
+
+                        if (task.isFaulted()) {
+                            Exception e = task.getError();
+
+                            Log.d("debug2",e.toString());
+                            Log.e("hoge","error", e);
+                            //エラー処理
+
+                            Toast.makeText(SettingActivity.this,"ログアウトに失敗しました。",Toast.LENGTH_SHORT).show();
+                        }
+                        return null;
+                    }
+                }, Task.UI_THREAD_EXECUTOR);
 
             }
         });
@@ -190,10 +207,8 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
 
         //memo: 目的地一覧を取得
       //  new getDestinations().execute();
+        getDest();
 
-        new RailsApi(SettingActivity.this).getDirectionsAsync(apiemail,apitoken);
-
-        mProgress.dismiss();
 
         //memo: 現在保存されているRealmの中身を取得＆並べ替え
         mRealm = Realm.getDefaultInstance();
@@ -227,8 +242,6 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
 
         //memo: 機能していない？
         mDestAdapter.notifyDataSetChanged();
-
-
 
 
         //memo: ListViewをタップしたときの処理(目的地の編集画面に行く時のリスナー）
@@ -278,8 +291,54 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
                      //   new deletedest().execute(String.valueOf(dest.getDestUrl()));
 
                         String url = String.valueOf(dest.getDestUrl());
+                        mProgress.show();
 
-                        new RailsApi(SettingActivity.this).deleteDirectionAsync(apiemail,apitoken,url);
+                        new RailsApi(SettingActivity.this).deleteDirectionAsync(apiemail,apitoken,url).onSuccessTask(new Continuation<String ,Task<String>>(){
+                            @Override
+                            public Task<String> then(Task<String> task) throws Exception {
+
+
+                                return new RailsApi(SettingActivity.this).getDirectionsAsync(apiemail,apitoken);
+                            }
+
+                        }).onSuccessTask(new Continuation<String, Task<String>>(){
+                            @Override
+                            public Task<String> then(Task<String> task) throws Exception{
+
+
+                                return new RailsApi(SettingActivity.this).saveDestinationdata(task.getResult());
+                            }
+
+
+
+                        }).onSuccess(new Continuation<String, String>(){
+                            @Override
+                            public String then(Task<String> task) throws Exception {
+
+                                Toast.makeText(SettingActivity.this,"目的地を削除しました。",Toast.LENGTH_SHORT).show();
+                               // finish();
+                                return null;
+                            }
+                        }, Task.UI_THREAD_EXECUTOR).continueWith(new Continuation<String, String>() {
+                            @Override
+                            public String then(Task<String> task) throws Exception {
+                                Log.d("Thread","LoginActLoginContinuewwith"+Thread.currentThread().getName());
+                                mProgress.dismiss();
+                                //finish();
+
+                                if (task.isFaulted()) {
+                                    Exception e = task.getError();
+
+                                    Log.d("debug2",e.toString());
+                                    Log.e("hoge","error", e);
+                                    //エラー処理
+
+                                    Toast.makeText(SettingActivity.this,"目的地の削除に失敗しました。",Toast.LENGTH_SHORT).show();
+                                }
+                                return null;
+                            }
+                        }, Task.UI_THREAD_EXECUTOR);
+
 
                     }
                 });
@@ -352,217 +411,6 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
        // reloadListView();
     }
 
-    /*
-    private class deletedest extends AsyncTask<String, Void, String>{
-        @Override
-        protected String doInBackground(String... params){
-
-            final MediaType JSON
-                    = MediaType.parse("application/json; charset=utf-8");
-
-            String urlString =  params[0]+"?email="+ apiemail +"&token="+ apitoken +"";
-            String result = null;
-
-            // リクエストオブジェクトを作って
-            Request request = new Request.Builder()
-                    .url(urlString)
-                    //.header("Authorization", credential)
-                    .delete()
-                    .build();
-
-            // クライアントオブジェクトを作って
-            OkHttpClient client = new OkHttpClient();
-
-            // リクエストして結果を受け取って
-            try {
-                okhttp3.Response response = client.newCall(request).execute();
-                Log.d("debug", String.valueOf(response));
-                if (response.isSuccessful()){
-
-                    result = "OK";
-                    Log.d("debug", "doDeletedest success");
-
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-                result = "NG";
-                Log.e("hoge", "error orz:" + e.getMessage(), e);
-            }
-            // 返す
-            return result;
-        }
-        @Override
-        protected void onPostExecute(String result) {
-            View v = findViewById(android.R.id.content);
-            if(result.equals("OK")) {
-                //deleteUserdata();
-                //Realm側削除
-                mRealm = Realm.getDefaultInstance();
-                RealmResults<Dest> results = mRealm.where(Dest.class).equalTo("id", dest.getId()).findAll();
-
-                mRealm.beginTransaction();
-                results.deleteAllFromRealm();
-
-                mRealm.commitTransaction();
-
-                Snackbar.make(v, "削除しました", Snackbar.LENGTH_LONG).show();
-
-                //memo: 削除されたので、reloadの役割として目的地一覧を取得
-                new getDestinations().execute();
-                //finish();
-            } else {
-                Snackbar.make(v, "削除に失敗しました。通信環境をご確認下さい。", Snackbar.LENGTH_LONG).show();
-                mProgress.dismiss();
-
-            }
-        }
-    }
-
-    private class logout extends AsyncTask<String, Void, String> {
-        @Override
-        protected String doInBackground(String... params) {
-
-            final MediaType JSON
-                    = MediaType.parse("application/json; charset=utf-8");
-
-            String urlString = "https://rails5api-wkojiro1.c9users.io/users/sign_out.json";
-            String result = null;
-
-            final String json =
-                    "{\"user\":{" +
-                            "\"email\":\"" + apiemail + "\"," +
-                            "\"access_token\":\"" + apitoken + "\"" +
-                            "}" +
-                    "}";
-
-            RequestBody body = RequestBody.create(JSON, json);
-
-            // リクエストオブジェクトを作って
-            Request request = new Request.Builder()
-                    .url(urlString)
-                    //.header("Authorization", credential)
-                    .delete(body)
-                    .build();
-
-            // クライアントオブジェクトを作って
-            OkHttpClient client = new OkHttpClient();
-
-            // リクエストして結果を受け取って
-            try {
-                okhttp3.Response response = client.newCall(request).execute();
-                Log.d("debug", String.valueOf(response));
-                if (response.isSuccessful()){
-
-                    result = "OK";
-                    Log.d("debug", "doPost success");
-
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-                result = "NG";
-                Log.e("hoge", "error orz:" + e.getMessage(), e);
-            }
-            // 返す
-            return result;
-        }
-
-        // onPostExecute displays the results of the AsyncTask.
-        @Override
-        protected void onPostExecute(String result) {
-
-            View v = findViewById(android.R.id.content);
-            if(result.equals("OK")) {
-                deleteUserdata();
-
-                Snackbar.make(v, "ログアウトしました", Snackbar.LENGTH_LONG).show();
-
-                finish();
-
-                mProgress.dismiss();
-            } else {
-                Snackbar.make(v, "ログアウトに失敗しました。通信環境をご確認下さい。", Snackbar.LENGTH_LONG).show();
-                mProgress.dismiss();
-            }
-        }
-    }
-
-    //memo: 目的地一覧をGET
-    private class getDestinations extends AsyncTask<String, Void, String> {
-        @Override
-        protected  String doInBackground(String... params) {
-
-            final MediaType JSON
-                    = MediaType.parse("application/json; charset=utf-8");
-
-            String urlString = "https://rails5api-wkojiro1.c9users.io/destinations.json?email="+ apiemail +"&token="+ apitoken +"";
-            String result = null;
-
-            // リクエストオブジェクトを作って
-            Request request = new Request.Builder()
-                    .url(urlString)
-                    .get()
-                    .build();
-
-            // クライアントオブジェクトを作って
-            OkHttpClient client = new OkHttpClient();
-
-            // リクエストして結果を受け取って
-            try {
-                Response response = client.newCall(request).execute();
-                Log.d("debug", String.valueOf(response));
-
-
-                if (response.isSuccessful()){
-
-                    String jsonData = response.body().string();
-                    Log.d("debug", jsonData);
-
-                    JSONArray jsonarray = new JSONArray(jsonData);
-                    for (int i = 0; i < jsonarray.length(); i++) {
-                        JSONObject jsonobject = jsonarray.getJSONObject(i);
-                    }
-
-                    //Realm mrealm = Realm.getDefaultInstance();
-                    mRealm= Realm.getDefaultInstance();
-                    mRealm.beginTransaction();
-                    Log.d("デリート前",String.valueOf(mRealm.isEmpty()));
-                    mRealm.where(Dest.class).findAll().deleteAllFromRealm();
-                    Log.d("デリート後",String.valueOf(mRealm.isEmpty()));
-                    mRealm.createOrUpdateAllFromJson(Dest.class,jsonarray); //Realm にそのまま吸い込まれた
-                    Log.d("後",String.valueOf(mRealm.isEmpty()));
-                    mRealm.commitTransaction();
-
-                    result = "OK";
-                    Log.d("debug", "doPost success");
-                    //  Log.d("debug", result);
-
-                }
-            } catch (IOException | JSONException e) { //Java SE 7 以降で有効な次の例では、重複したコードをなくすことができます。http://docs.oracle.com/javase/jp/7/technotes/guides/language/catch-multiple.html
-                e.printStackTrace();
-                result = "NG";
-                Log.e("error", "error orz:" + e.getMessage(), e);
-            }
-            // 返す
-            return result;
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            Log.d("GetDestination","done");
-            View v = findViewById(android.R.id.content);
-            if(result.equals("OK")) {
-                //saveUserdata();
-
-                Snackbar.make(v, "目的地の一覧を取得しました", Snackbar.LENGTH_LONG).show();
-                mProgress.dismiss();
-
-            } else {
-                Snackbar.make(v, "目的地の一覧取得に失敗しました。通信環境をご確認下さい。", Snackbar.LENGTH_LONG).show();
-                mProgress.dismiss();
-            }
-        }
-    }
-    */
 
     public void addDestination(Integer selected_id) {
         Log.d("selected_position",String.valueOf(selected_id));
@@ -609,27 +457,7 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
 
     }
 
-    //memo: ログアウト時にPreferenceを削除する。（＊sp.edit().clear().commit() だと何故かListenerが反応しない。
-    private void deleteUserdata() {
-        // Preferenceを削除する
 
-        /*
-        .commit() から .apply()に変更。 20170411
-         */
-
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
-        sp.edit().remove("username").remove("email").remove("access_token").remove("id").remove("position_id").remove("destname").remove("destaddress").remove("destemail").remove("latitude").remove("longitude").apply();
-        //sp.edit().clear().commit();
-        Log.d("Delete","done");
-        apiemail = null;
-        apiusername = null;
-        apitoken = null;
-
-        mRealm.beginTransaction();
-        mRealm.deleteAll();
-        mRealm.commitTransaction();
-
-    }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -648,7 +476,7 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
                     Log.d("戻ってきた", returnValue);
                    // new getDestinations().execute();
 
-                    new RailsApi(SettingActivity.this).getDirectionsAsync(apiemail,apitoken);
+                    getDest();
 
 
                     // Log.v("Edit Text", data.getExtra("INPUT_STRING"));
@@ -688,4 +516,95 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
 
 
     }
+
+    //memo: 目的地一覧取得のメソッド（頻出するため、メソッド化）
+
+    public void getDest(){
+
+        new RailsApi(SettingActivity.this).getDirectionsAsync(apiemail,apitoken).onSuccessTask(new Continuation<String, Task<String>>(){
+            @Override
+            public Task<String> then(Task<String> task) throws Exception {
+
+
+                return new RailsApi(SettingActivity.this).saveDestinationdata(task.getResult());
+            }
+
+        }).onSuccess(new Continuation<String, String>(){
+            @Override
+            public String then(Task<String> task) throws Exception {
+
+                Toast.makeText(SettingActivity.this,"目的地情報を更新しました。",Toast.LENGTH_SHORT).show();
+                //finish();
+                return null;
+            }
+        }, Task.UI_THREAD_EXECUTOR).continueWith(new Continuation<String, String>() {
+            @Override
+            public String then(Task<String> task) throws Exception {
+                Log.d("Thread","SettingActivity"+Thread.currentThread().getName());
+                mProgress.dismiss();
+                //finish();
+
+                if (task.isFaulted()) {
+                    Exception e = task.getError();
+
+                    Log.d("debug2",e.toString());
+                    Log.e("hoge","error", e);
+                    //エラー処理
+
+                    Toast.makeText(SettingActivity.this,"目的地情報の更新に失敗しました。",Toast.LENGTH_SHORT).show();
+                }
+                return null;
+            }
+        }, Task.UI_THREAD_EXECUTOR);
+
+    }
+
+
+
+
+
+
+
+
+
+    public void logout(){
+
+        new RailsApi(SettingActivity.this).logoutAsync(apiemail,apitoken).onSuccessTask(new Continuation<String, Task<String>>(){
+            @Override
+            public Task<String> then(Task<String> task) throws Exception {
+
+
+                return new RailsApi(SettingActivity.this).deleteUserdata();
+            }
+
+        }).onSuccess(new Continuation<String, String>(){
+            @Override
+            public String then(Task<String> task) throws Exception {
+
+                Toast.makeText(SettingActivity.this,"ログアウトしました。",Toast.LENGTH_SHORT).show();
+                finish();
+                return null;
+            }
+        }, Task.UI_THREAD_EXECUTOR).continueWith(new Continuation<String, String>() {
+            @Override
+            public String then(Task<String> task) throws Exception {
+                Log.d("Thread","LoginActLoginContinuewwith"+Thread.currentThread().getName());
+                mProgress.dismiss();
+                //finish();
+
+                if (task.isFaulted()) {
+                    Exception e = task.getError();
+
+                    Log.d("debug2",e.toString());
+                    Log.e("hoge","error", e);
+                    //エラー処理
+
+                    Toast.makeText(SettingActivity.this,"ログアウトに失敗しました。",Toast.LENGTH_SHORT).show();
+                }
+                return null;
+            }
+        }, Task.UI_THREAD_EXECUTOR);
+
+    }
+
 }

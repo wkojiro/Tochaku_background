@@ -42,6 +42,9 @@ import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
 
+import bolts.Continuation;
+import bolts.Task;
+
 /**
  * A bound and started service that is promoted to a foreground service when location updates have
  * been requested and all clients unbind.
@@ -473,7 +476,25 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
                 e.printStackTrace();
             }
             */
-            new mailSet().execute(destname, destemail, String.valueOf(currentlatitude), String.valueOf(currentlongitude));
+            new RailsApi(null).postMailAsync(email,access_token,destname, destemail, nowlatitude, nowlongitude)
+                    .onSuccess(new Continuation<String, String>() {
+                        @Override
+                        public String then(Task<String> task) throws Exception {
+                            Toast.makeText(null,"メール送信しました。",Toast.LENGTH_SHORT).show();
+                            return null;
+                        }
+                    }, Task.UI_THREAD_EXECUTOR).continueWith(new Continuation<String, String>() {
+                @Override
+                public String then(Task<String> task) throws Exception {
+                    Log.d("Thread","LoginActLoginContinuewwith"+Thread.currentThread().getName());
+
+                    if (task.isFaulted()) {
+                        Toast.makeText(null,"メール送信に失敗しました。",Toast.LENGTH_SHORT).show();
+                        Log.d("debug","70%メール送信していません。");
+                    }
+                    return null;
+                }
+            }, Task.UI_THREAD_EXECUTOR);
             Toast.makeText(this, "全行程の７０％を通過しました。", Toast.LENGTH_LONG).show();
 
             mailCount = 1;

@@ -20,6 +20,7 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 
@@ -34,6 +35,8 @@ import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
 
+import bolts.Continuation;
+import bolts.Task;
 import io.realm.Realm;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -172,7 +175,58 @@ public class DestActivity extends AppCompatActivity implements SharedPreferences
                     if (destname.length() != 0 && destemail.length() != 0 && destaddress.length() != 0) {
 
                        // new DestActivity.createDestination().execute(destname,destemail,destaddress);
-                        new RailsApi(DestActivity.this).createDirectionAsync(email,access_token,destname,destemail,destaddress);
+
+
+                        mProgress.show();
+
+
+                        new RailsApi(DestActivity.this).createDirectionAsync(email,access_token,destname,destemail,destaddress).onSuccessTask(new Continuation<String ,Task<String>>(){
+                            @Override
+                            public Task<String> then(Task<String> task) throws Exception {
+
+
+                                return new RailsApi(DestActivity.this).getDirectionsAsync(email,access_token);
+                            }
+
+                        }).onSuccessTask(new Continuation<String, Task<String>>(){
+                            @Override
+                            public Task<String> then(Task<String> task) throws Exception{
+
+
+                                return new RailsApi(DestActivity.this).saveDestinationdata(task.getResult());
+                            }
+
+
+
+                        }).onSuccess(new Continuation<String, String>(){
+                            @Override
+                            public String then(Task<String> task) throws Exception {
+
+                                Toast.makeText(DestActivity.this,"目的地情報を更新しました。",Toast.LENGTH_SHORT).show();
+                                finish();
+                                return null;
+                            }
+                        }, Task.UI_THREAD_EXECUTOR).continueWith(new Continuation<String, String>() {
+                            @Override
+                            public String then(Task<String> task) throws Exception {
+                                Log.d("Thread","LoginActLoginContinuewwith"+Thread.currentThread().getName());
+                                mProgress.dismiss();
+                                //finish();
+
+                                if (task.isFaulted()) {
+                                    Exception e = task.getError();
+
+                                    Log.d("debug2",e.toString());
+                                    Log.e("hoge","error", e);
+                                    //エラー処理
+
+                                    Toast.makeText(DestActivity.this,"目的地情報を更新しました。",Toast.LENGTH_SHORT).show();
+                                }
+                                return null;
+                            }
+                        }, Task.UI_THREAD_EXECUTOR);
+
+
                     } else {
                         Log.d("目的地登録エラー", "ddd");
                         // エラーを表示する
@@ -188,7 +242,56 @@ public class DestActivity extends AppCompatActivity implements SharedPreferences
                     desturl = mDest.getDestUrl();
                     Log.d("更新登録", desturl);
                     //    new DestActivity.editDestination().execute(destname,destemail,destaddress,desturl);
-                    new RailsApi(DestActivity.this).editDirectionAsync(email, access_token, destname, destemail, destaddress, desturl);
+
+
+                    new RailsApi(DestActivity.this).editDirectionAsync(email, access_token, destname, destemail, destaddress, desturl).onSuccessTask(new Continuation<String ,Task<String>>(){
+                        @Override
+                        public Task<String> then(Task<String> task) throws Exception {
+
+
+                            return new RailsApi(DestActivity.this).getDirectionsAsync(email,access_token);
+                        }
+
+                    }).onSuccessTask(new Continuation<String, Task<String>>(){
+                        @Override
+                        public Task<String> then(Task<String> task) throws Exception{
+
+
+                            return new RailsApi(DestActivity.this).saveDestinationdata(task.getResult());
+                        }
+
+
+
+                    }).onSuccess(new Continuation<String, String>(){
+                        @Override
+                        public String then(Task<String> task) throws Exception {
+
+                            Toast.makeText(DestActivity.this,"目的地情報を更新しました。",Toast.LENGTH_SHORT).show();
+                            // finish();
+                            return null;
+                        }
+                    }, Task.UI_THREAD_EXECUTOR).continueWith(new Continuation<String, String>() {
+                        @Override
+                        public String then(Task<String> task) throws Exception {
+                            Log.d("Thread","LoginActLoginContinuewwith"+Thread.currentThread().getName());
+                            mProgress.dismiss();
+                            //finish();
+
+                            if (task.isFaulted()) {
+                                Exception e = task.getError();
+
+                                Log.d("debug2",e.toString());
+                                Log.e("hoge","error", e);
+                                //エラー処理
+
+                                Toast.makeText(DestActivity.this,"目的地情報を更新しました。",Toast.LENGTH_SHORT).show();
+                            }
+                            return null;
+                        }
+                    }, Task.UI_THREAD_EXECUTOR);
+
+
+
                 }
             }
 

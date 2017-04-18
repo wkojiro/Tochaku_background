@@ -69,7 +69,7 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
 
 
 
-    protected Task<String> createAccountAsync(String username, String email, String password) {
+    public Task<String> createAccountAsync(String username, String email, String password) {
 
         final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
 
@@ -77,7 +77,7 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
                 = MediaType.parse("application/json; charset=utf-8");
 
         String urlString = "https://rails5api-wkojiro1.c9users.io/users.json"; //tocakudemo
-        String result = null;
+        //String result = null;
 
         //memo: コンストラクタ。初期化している。Responseが上書く。
         user = new User();
@@ -117,35 +117,14 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 String s = "OK";
-                if (response.isSuccessful()){
-                    taskresult.setResult(s);
+                if (response.isSuccessful()) {
+
 
                     String jsonData = response.body().string();
+
+                    taskresult.setResult(jsonData);
                     Log.d("debug", jsonData);
 
-                    // JSON to Java
-                    Gson gson = new Gson();
-
-                    //memo: JsonDataからユーザーインスタンスに格納 http://qiita.com/u-chida/items/cbdd040e4199a10936dc
-                    //   user = gson.fromJson(jsonData.toString(), User.class);
-                    user = gson.fromJson(jsonData, User.class);
-                    Log.d("debug", String.valueOf(response.body().toString()));
-                    Log.d("debug", String.valueOf(user));
-
-                    //memo: 上でResponseから取得したUserを今度はPreferenceに保存する為に変数に格納
-                    if (user != null) {
-                        res_id = user.getUid();
-                        res_token = user.getToken();
-                        res_username = user.getUserName();
-                        res_email = user.getEmail();
-                        // res_password = user.getPassword();
-                        Log.d("レスポンス", res_id);
-                        System.out.println("username = " + user.getUserName());
-                        System.out.println("username = " + res_username);
-
-                    }
-                        //memo: 会員情報をPreferenceに保存
-                    //saveUserdata();
                 }else{
                     taskresult.setError(new HttpException(response.code()));
                 }
@@ -194,58 +173,8 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
         OkHttpClient client = new OkHttpClient();
 
 
-        /* 本来はこう言う書き方をすべき？
-        // OKHTTPとの相性の問題か！？
-        taskresult.InBackground(new GetCallback() {
-            public void done(ParseObject object, ParseException e) {
-                if (e == null) {
-                    tcs.setResult(object);
-                } else {
-                    tcs.setError(e);
-                }
-            }
-        });
 
-        client.callInBackground(new Callable<Void>() {
-            public Void call() {
-                // Do a bunch of stuff.
-            }
-        }).continueWith(...);
-
-        */
-
-
-
-
-        // リクエストして結果を受け取って
-    /*
-    この書き方（try catch execute系）は、
-    okhttp3.Response response = client.newCall(request).execute(); ここでエラーになる
-
-     */
-    /*
-        try {
-            okhttp3.Response response = client.newCall(request).execute();
-            Log.d("debug", String.valueOf(response));
-            if (response.isSuccessful()) {
-
-                String jsonData = response.body().string();
-                taskresult.setResult(jsonData);
-
-            } else {
-                taskresult.setError(new HttpException(response.code()));
-            }
-        } catch (IOException e) {
-            taskresult.setError(e);
-            Log.e("hoge", "error orz:" + e.getMessage(), e);
-        }
-
-        return taskresult.getTask();
-
-    }
-    */
-
-    //memo: 書き方Part2　（これもOKHTTP踏襲だからうまくいかない！？）
+    //memo: リクエストしている
 
         client.newCall(request).enqueue(new Callback() {
 
@@ -316,83 +245,7 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
        return taskresult.getTask();
    }
 
-/*
-   public Task<String> loginRequests(String email, String password) {
-       final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
-  //      final String[] result = {""};
-        loginAsync(email, password).onSuccessTask(new Continuation<String, Task<String>>() {
-            @Override
-            public Task<String> then(Task<String> task) throws Exception {
-                final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
-                if(task.isCancelled()){
-                    //task cancelled
-                } else if(task.isFaulted()){
-                    Exception error = task.getError();
-                } else {
-                   // String taskresult = task.getResult();
-                    taskresult.setResult("OK");
-                    Log.d("debug", task.getResult());
-                }
 
-                return saveUserdata(task.getResult());
-            }
-        }).onSuccess(new Continuation<String, Task<Void>>() {
-            @Override
-            public Task<Void> then(Task<String> task) throws Exception {
-                final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
-
-               // mProgress.dismiss();
-
-               Toast.makeText(mContext,"ログインしました",Toast.LENGTH_SHORT).show();
-                return null;
-            }
-        });
-
-       //memo: 本来はここで切り分けたい。
-       taskresult.setResult("OK");
-       return taskresult.getTask();
-    }
-    */
-
-/*
-    public Task<String> createAccountRequests(String username, String email, String password) {
-        final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
-        //      final String[] result = {""};
-        createAccountAsync(username, email, password).onSuccessTask(new Continuation<String, Task<String>>() {
-            @Override
-            public Task<String> then(Task<String> task) throws Exception {
-                final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
-                if(task.isCancelled()){
-                    //task cancelled
-                } else if(task.isFaulted()){
-                    Exception error = task.getError();
-                } else {
-                    // String taskresult = task.getResult();
-                    taskresult.setResult("OK");
-                    Log.d("debug", task.getResult());
-                }
-
-                return saveUserdata(task.getResult());
-            }
-        }).onSuccess(new Continuation<String, Task<String>>() {
-            @Override
-            public Task<String> then(Task<String> task) throws Exception {
-                final TaskCompletionSource<String> taskresult2 = new TaskCompletionSource<>();
-
-                Log.d("debug", "SaveUserInfoDone");
-                //（要確認）
-                taskresult2.setResult("OK");
-
-                return taskresult2.getTask();
-            }
-        });
-
-        taskresult.setResult("OK");
-
-        return taskresult.getTask();
-    }
-
-*/
     public Task<Void> editAccountAsync(String email, String access_token){
 
         return null;
@@ -403,7 +256,7 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
         return null;
     }
 
-    public Task<Void> logoutAsync(String email, String access_token) {
+    public Task<String> logoutAsync(String email, String access_token) {
 
         final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
 
@@ -444,25 +297,51 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
                     taskresult.setResult(s);
 
 
-                    deleteUserdata();
+                   // deleteUserdata();
+                } else {
+                    taskresult.setError(new HttpException(response.code()));
                 }
             }
-
-
         });
+        return taskresult.getTask();
+    }
 
-        return null;
+    //logout
+    protected Task<String> deleteUserdata(){
+
+        final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
+        // Preferenceを削除する
+
+        /*
+        .commit() から .apply()に変更。 20170411
+         */
+        Realm mRealm = Realm.getDefaultInstance();
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mContext);
+        sp.edit().remove("username").remove("email").remove("access_token").remove("id").remove("position_id").remove("destname").remove("destaddress").remove("destemail").remove("latitude").remove("longitude").apply();
+        //sp.edit().clear().commit();
+        Log.d("Delete","done");
+
+
+        mRealm.beginTransaction();
+        mRealm.deleteAll();
+        mRealm.commitTransaction();
+
+        taskresult.setResult("OK");
+
+        return taskresult.getTask();
+
 
     }
 
-    public Task<Void> getDirectionsAsync(String email, String access_token){
+
+    public Task<String> getDirectionsAsync(String email, String access_token){
 
         final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
         final MediaType JSON
                 = MediaType.parse("application/json; charset=utf-8");
 
         String urlString = "https://rails5api-wkojiro1.c9users.io/destinations.json?email="+ email +"&token="+ access_token +"";
-        String result = null;
+       // String result = null;
 
         // リクエストオブジェクトを作って
         Request request = new Request.Builder()
@@ -473,7 +352,6 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
         // クライアントオブジェクトを作って
         OkHttpClient client = new OkHttpClient();
 
-
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
@@ -481,48 +359,64 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
             }
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                String s = "OK";
+               // String s = "OK";
                 if (response.isSuccessful()) {
-                    taskresult.setResult(s);
+
 
                     String jsonData = response.body().string();
                     Log.d("debug", jsonData);
 
-                    JSONArray jsonarray = null;
-                    try {
-                        jsonarray = new JSONArray(jsonData);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                    for (int i = 0; i < jsonarray.length(); i++) {
-                        try {
-                            JSONObject jsonobject = jsonarray.getJSONObject(i);
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
+                    taskresult.setResult(jsonData);
 
-                    //Realm mrealm = Realm.getDefaultInstance();
-                    Realm mRealm= Realm.getDefaultInstance();
-                    mRealm.beginTransaction();
-                    Log.d("デリート前",String.valueOf(mRealm.isEmpty()));
-                    mRealm.where(Dest.class).findAll().deleteAllFromRealm();
-                    Log.d("デリート後",String.valueOf(mRealm.isEmpty()));
-                    mRealm.createOrUpdateAllFromJson(Dest.class,jsonarray); //Realm にそのまま吸い込まれた
-                    Log.d("後",String.valueOf(mRealm.isEmpty()));
-                    mRealm.commitTransaction();
-
-                    Log.d("debug", "doPost success");
-
+                } else {
+                    taskresult.setError(new HttpException(response.code()));
                 }
             }
         });
         // リクエストして結果を受け取って
 
-        return null;
+        return taskresult.getTask();
     }
 
-    public Task<Void> createDirectionAsync(String email ,String access_token,String destname, String destemail, String destaddress) {
+    protected Task<String> saveDestinationdata(String jsonData){
+        Log.d("Thread","SaveUserdata"+Thread.currentThread().getName());
+        // public void saveUserdata(){
+        final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
+
+        JSONArray jsonarray = null;
+        try {
+            jsonarray = new JSONArray(jsonData);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        for (int i = 0; i < jsonarray.length(); i++) {
+            try {
+                JSONObject jsonobject = jsonarray.getJSONObject(i);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        //Realm mrealm = Realm.getDefaultInstance();
+        Realm mRealm= Realm.getDefaultInstance();
+        mRealm.beginTransaction();
+        Log.d("デリート前",String.valueOf(mRealm.isEmpty()));
+        mRealm.where(Dest.class).findAll().deleteAllFromRealm();
+        Log.d("デリート後",String.valueOf(mRealm.isEmpty()));
+        mRealm.createOrUpdateAllFromJson(Dest.class,jsonarray); //Realm にそのまま吸い込まれた
+        Log.d("後",String.valueOf(mRealm.isEmpty()));
+        mRealm.commitTransaction();
+
+        Log.d("debug", "doPost success");
+
+
+        taskresult.setResult("OK");
+        return taskresult.getTask();
+    }
+
+
+
+    public Task<String> createDirectionAsync(String email ,String access_token,String destname, String destemail, String destaddress) {
 
 
         final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
@@ -564,16 +458,21 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 String s = "OK";
-                taskresult.setResult(s);
+
+                if (response.isSuccessful()) {
+                    taskresult.setResult(s);
+                }else{
+                    taskresult.setError(new HttpException(response.code()));
+                }
             }
         });
         // リクエストして結果を受け取って
 
-        return null;
+        return taskresult.getTask();
     }
 
 
-    public Task<Void> editDirectionAsync(String email ,String access_token,String destname, String destemail, String destaddress, String url){
+    public Task<String> editDirectionAsync(String email ,String access_token,String destname, String destemail, String destaddress, String url){
 
         final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
         final MediaType JSON
@@ -608,46 +507,20 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 String s = "OK";
-                taskresult.setResult(s);
 
-                //memo: 本来はここで新たに取得しなおしたい
-                // getDirectionsAsync(email,access_token);
-                //finish();
+                if(response.isSuccessful()) {
+                    taskresult.setResult(s);
+                } else {
+                    taskresult.setError(new HttpException(response.code()));
+                }
 
             }
         });
 
-        /*
-        // リクエストして結果を受け取って
-        try {
-            okhttp3.Response response = client.newCall(request).execute();
-            Log.d("debug", String.valueOf(response));
-            if (response.isSuccessful()){
-
-                String jsonData = response.body().string();
-                //   Log.d("debug", result);
-
-
-                result = "OK";
-                Log.d("debug", "doPost success");
-                //  Log.d("debug", result);
-
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            result = "NG";
-            Log.e("hoge", "error orz:" + e.getMessage(), e);
-        }
-
-        // 返す
-        return result;
-        */
-
-
-        return null;
+        return taskresult.getTask();
     }
 
-    public Task<Void> deleteDirectionAsync(String email,String access_token, String url){
+    public Task<String> deleteDirectionAsync(String email,String access_token, String url){
 
         final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
         final MediaType JSON
@@ -676,15 +549,17 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 String s = "OK";
-                taskresult.setResult(s);
-
-                //memo: 本来はここで新たに取得しなおしたい
-               // getDirectionsAsync(email,access_token);
-                //finish();
+                if(response.isSuccessful()) {
+                    taskresult.setResult(s);
+                } else {
+                    taskresult.setError(new HttpException(response.code()));
+                }
 
             }
         });
-        return null;
+
+
+        return taskresult.getTask();
     }
 
     public Task<String>  postMailAsync(String email,String access_token,String destname,String destemail, String nowlatitude, String nowlongitude) {
@@ -732,6 +607,8 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
                 String s = "OK";
                 if (response.isSuccessful()){
                     taskresult.setResult(s);
+                }else{
+                    taskresult.setError(new HttpException(response.code()));
                 }
 
             }
@@ -825,30 +702,7 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
 
 
 
-    //logout
-    public Task<Void> deleteUserdata(){
 
-
-            // Preferenceを削除する
-
-        /*
-        .commit() から .apply()に変更。 20170411
-         */
-        Realm mRealm = Realm.getDefaultInstance();
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mContext);
-        sp.edit().remove("username").remove("email").remove("access_token").remove("id").remove("position_id").remove("destname").remove("destaddress").remove("destemail").remove("latitude").remove("longitude").apply();
-            //sp.edit().clear().commit();
-        Log.d("Delete","done");
-
-
-        mRealm.beginTransaction();
-        mRealm.deleteAll();
-        mRealm.commitTransaction();
-
-        return null;
-
-
-    }
 
 
 

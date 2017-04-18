@@ -66,6 +66,8 @@ import java.net.ProtocolException;
 import java.net.URL;
 import java.util.Calendar;
 
+import bolts.Continuation;
+import bolts.Task;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -311,12 +313,29 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                                     Toast.makeText(MainActivity.this, "メール" + mStatus, Toast.LENGTH_LONG).show();
                                     Toast.makeText(MainActivity.this, "出発地" + currentlatitude + currentlongitude, Toast.LENGTH_LONG).show();
 
-                                   // try {
-                                        new RailsApi(MainActivity.this).postMailAsync(email,access_token,destname, destemail, String.valueOf(currentlatitude), String.valueOf(currentlongitude));
-                                  //  } catch (IOException e) {
-                                   //     e.printStackTrace();
-                                  //  }
-                                    //new commingmail().execute(destname, destemail, String.valueOf(currentlatitude), String.valueOf(currentlongitude));
+
+                                        new RailsApi(MainActivity.this).postMailAsync(email,access_token,destname, destemail, String.valueOf(currentlatitude), String.valueOf(currentlongitude))
+                                               .onSuccess(new Continuation<String, String>() {
+                                            @Override
+                                            public String then(Task<String> task) throws Exception {
+
+
+                                            //memo: このToastが出ているか要チェック
+                                            Toast.makeText(MainActivity.this,"メールを送信しました。",Toast.LENGTH_SHORT).show();
+                                                return null;
+                                            }
+                                        }, Task.UI_THREAD_EXECUTOR).continueWith(new Continuation<String, String>() {
+                                            @Override
+                                            public String then(Task<String> task) throws Exception {
+                                                Log.d("Thread","LoginActLoginContinuewwith"+Thread.currentThread().getName());
+
+                                                if (task.isFaulted()) {
+                                                    Toast.makeText(MainActivity.this,"メール送信に失敗しました。",Toast.LENGTH_SHORT).show();
+                                                }
+                                                return null;
+                                            }
+                                        }, Task.UI_THREAD_EXECUTOR);
+
                                 }
                                 mailCount = 1;
 
