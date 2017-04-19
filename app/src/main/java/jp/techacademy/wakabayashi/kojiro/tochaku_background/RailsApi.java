@@ -33,7 +33,7 @@ import okhttp3.Response;
  *
  * 参考サイト
  * http://blog.xin9le.net/entry/2012/07/30/123150
- *
+ * http://d.hatena.ne.jp/gfx/20140503/1399127545
  *
  *
  *
@@ -51,16 +51,8 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
     private String res_email;
 
     private Context mContext;
-    private ProgressDialog mProgress;
-
-  //  private static RailsApi instance = null;
 
 
-    public RailsApi(Context context, ProgressDialog progress){
-
-      mContext = context;
-      mProgress = progress;
-    }
     public RailsApi(Context context){
 
       mContext = context;
@@ -68,8 +60,7 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
     }
 
 
-
-    public Task<String> createAccountAsync(String username, String email, String password) {
+    protected Task<String> createAccountAsync(String username, String email, String password) {
 
         final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
 
@@ -80,10 +71,12 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
         //String result = null;
 
         //memo: コンストラクタ。初期化している。Responseが上書く。
+        /*
         user = new User();
         user.setUsername(username);
         user.setEmail(email);
         user.setPassword(password);
+        */
 
         final String json =
                 "{\"user\":{" +
@@ -138,7 +131,7 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
     }
 
 
-    public Task<String> loginAsync(String email, String password) {
+    protected Task<String> loginAsync(String email, String password) {
 
         Log.d("Thread","LoginAsync"+Thread.currentThread().getName());
         final TaskCompletionSource taskresult = new TaskCompletionSource<>();
@@ -149,9 +142,11 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
         String urlString = "https://rails5api-wkojiro1.c9users.io/users/sign_in.json";
 
         //memo: ここでこれ必要か？？
+        /*
         user = new User();
         user.setEmail(email);
         user.setPassword(password);
+        */
 
         final String json =
                 "{\"user\":{" +
@@ -177,8 +172,6 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
     //memo: リクエストしている
 
         client.newCall(request).enqueue(new Callback() {
-
-
 
             @Override
             public void onFailure(Call call, IOException e) {
@@ -214,6 +207,7 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
        final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
 
        Gson gson = new Gson();
+       user = new User();
 
        user = gson.fromJson(jsonData, User.class);
        if (user != null) {
@@ -246,17 +240,7 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
    }
 
 
-    public Task<Void> editAccountAsync(String email, String access_token){
-
-        return null;
-    }
-
-    public Task<Void> deleteAccountAsync(String email, String access_token){
-
-        return null;
-    }
-
-    public Task<String> logoutAsync(String email, String access_token) {
+    protected Task<String> logoutAsync(String email, String access_token) {
 
         final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
 
@@ -310,7 +294,6 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
     protected Task<String> deleteUserdata(){
 
         final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
-        // Preferenceを削除する
 
         /*
         .commit() から .apply()に変更。 20170411
@@ -325,16 +308,13 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
         mRealm.beginTransaction();
         mRealm.deleteAll();
         mRealm.commitTransaction();
-
         taskresult.setResult("OK");
-
         return taskresult.getTask();
-
 
     }
 
 
-    public Task<String> getDirectionsAsync(String email, String access_token){
+    protected Task<String> getDirectionsAsync(String email, String access_token){
 
         final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
         final MediaType JSON
@@ -416,7 +396,7 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
 
 
 
-    public Task<String> createDirectionAsync(String email ,String access_token,String destname, String destemail, String destaddress) {
+    protected Task<String> createDirectionAsync(String email ,String access_token,String destname, String destemail, String destaddress) {
 
 
         final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
@@ -472,7 +452,7 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
     }
 
 
-    public Task<String> editDirectionAsync(String email ,String access_token,String destname, String destemail, String destaddress, String url){
+    protected Task<String> editDirectionAsync(String email ,String access_token,String destname, String destemail, String destaddress, String url){
 
         final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
         final MediaType JSON
@@ -520,7 +500,7 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
         return taskresult.getTask();
     }
 
-    public Task<String> deleteDirectionAsync(String email,String access_token, String url){
+    protected Task<String> deleteDirectionAsync(String email,String access_token, String url){
 
         final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
         final MediaType JSON
@@ -562,7 +542,7 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
         return taskresult.getTask();
     }
 
-    public Task<String>  postMailAsync(String email,String access_token,String destname,String destemail, String nowlatitude, String nowlongitude) {
+    protected Task<String>  postMailAsync(String email,String access_token,String destname,String destemail, String nowlatitude, String nowlongitude) {
         final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
 
         final MediaType JSON
@@ -610,9 +590,7 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
                 }else{
                     taskresult.setError(new HttpException(response.code()));
                 }
-
             }
-
         });
 
         Log.d("taskSource", String.valueOf(taskresult.getTask()));
@@ -621,15 +599,13 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
 
 
 
-    public  Task<String> test() {
-
-
+    protected  Task<String> test() {
 
         return Task.forResult("OK");
     }
 
 
-    public  Task<String> test01() {
+    protected  Task<String> test01() {
         final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
 
         String s = "test01";
@@ -640,7 +616,7 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
 
     }
 
-    public  Task<String> test02() {
+    protected  Task<String> test02() {
         final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
         String s = "test02";
         taskresult.setResult(s);
@@ -648,7 +624,7 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
         return taskresult.getTask();
     }
 
-    public  Task<String> test03() {
+    protected  Task<String> test03() {
         final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
         String s = "test03";
         taskresult.setResult(s);
@@ -656,7 +632,7 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
         return taskresult.getTask();
     }
 
-    public Task<Void> test04() {
+    protected Task<Void> test04() {
        // final TaskCompletionSource<String> taskresult = new TaskCompletionSource<>();
         String s = "test03";
        // taskresult.setResult(s);
@@ -664,7 +640,7 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
         return null;
     }
 
-    private void shortwaterfallRequests() {
+    protected void shortwaterfallRequests() {
 
         test01().continueWithTask(new Continuation<String, Task<String>>() {
             @Override
@@ -686,29 +662,8 @@ public class RailsApi implements SharedPreferences.OnSharedPreferenceChangeListe
 
     }
 
-    public Task<String> succeedAsync() {
-        TaskCompletionSource<String> successful = new TaskCompletionSource<>();
-
-        successful.setResult("The good result.");
-        return successful.getTask();
-    }
-
-    public Task<String> failAsync() {
-        TaskCompletionSource<String> failed = new TaskCompletionSource<>();
-        failed.setError(new RuntimeException("An error message."));
-        return failed.getTask();
-    }
 
 
-
-
-
-
-
-
-    public void deleteDestination(){
-
-    }
 
 
 

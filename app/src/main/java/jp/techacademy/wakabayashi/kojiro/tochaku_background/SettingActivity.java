@@ -367,31 +367,39 @@ public class SettingActivity extends AppCompatActivity implements SharedPreferen
         mDestRealmResults = mRealm.where(Dest.class).findAllSorted("id",Sort.DESCENDING);
         Log.d("ReloadView.リザルト",String.valueOf(mDestRealmResults.size()));
 
+        if(mDestRealmResults.size() == 0) {
 
-        //memo: 仮説：現状だとmDestRealmResultsが変わったあとにListViewに表示している。
-        mDestArrayList = new ArrayList<>();
 
-        for (int i = 0; i < mDestRealmResults.size(); i++){
-            if(!mDestRealmResults.get(i).isValid()) continue;
+            Toast.makeText(this,"登録されている目的地がありません。",Toast.LENGTH_LONG).show();
 
-            Dest dest = new Dest();
 
-            dest.setId(mDestRealmResults.get(i).getId());
-            dest.setPositionId(mDestRealmResults.get(i).getPositionId());
-            dest.setDestName(mDestRealmResults.get(i).getDestName());
-            dest.setDestEmail(mDestRealmResults.get(i).getDestEmail());
-            dest.setDestAddress(mDestRealmResults.get(i).getDestAddress());
-            dest.setDestLatitude(mDestRealmResults.get(i).getDestLatitude());
-            dest.setDestLongitude(mDestRealmResults.get(i).getDestLongitude());
-            dest.setDestUrl(mDestRealmResults.get(i).getDestUrl());
+        } else {
+            //memo: 仮説：現状だとmDestRealmResultsが変わったあとにListViewに表示している。
+            mDestArrayList = new ArrayList<>();
 
-            mDestArrayList.add(dest);
-        }
+            for (int i = 0; i < mDestRealmResults.size(); i++) {
+                if (!mDestRealmResults.get(i).isValid()) continue;
+
+                Dest dest = new Dest();
+
+                dest.setId(mDestRealmResults.get(i).getId());
+                dest.setPositionId(mDestRealmResults.get(i).getPositionId());
+                dest.setDestName(mDestRealmResults.get(i).getDestName());
+                dest.setDestEmail(mDestRealmResults.get(i).getDestEmail());
+                dest.setDestAddress(mDestRealmResults.get(i).getDestAddress());
+                dest.setDestLatitude(mDestRealmResults.get(i).getDestLatitude());
+                dest.setDestLongitude(mDestRealmResults.get(i).getDestLongitude());
+                dest.setDestUrl(mDestRealmResults.get(i).getDestUrl());
+
+                mDestArrayList.add(dest);
+            }
+
 
         mDestAdapter.setDestArrayList(mDestArrayList);
         mListView.setAdapter(mDestAdapter);
         mDestAdapter.notifyDataSetChanged();
 
+        }
     }
 
     @Override

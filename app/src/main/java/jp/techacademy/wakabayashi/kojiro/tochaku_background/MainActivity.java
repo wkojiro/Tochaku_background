@@ -94,8 +94,8 @@ import okhttp3.Response;
  * notification. This dismisses the notification and stops the service.
  *
  *
- * おもなToDO　
- * ・状態による切り分け（　User情報があるか、目的地情報があるか、Permissionがあるか）
+ * 参考
+ * ・https://github.com/googlesamples/android-play-location
  *
  *
  *

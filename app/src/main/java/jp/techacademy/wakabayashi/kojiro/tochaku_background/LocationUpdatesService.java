@@ -469,13 +469,7 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
 
             String nowlatitude = String.valueOf(currentlatitude);
             String nowlongitude = String.valueOf(currentlongitude);
-           /*
-            try {
-                new RailsApi().postMailAsync(destname, destemail, nowlatitude, nowlongitude);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            */
+
             new RailsApi(null).postMailAsync(email,access_token,destname, destemail, nowlatitude, nowlongitude)
                     .onSuccess(new Continuation<String, String>() {
                         @Override
@@ -512,6 +506,7 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
 
     }
 
+/*
     public class mailSet extends AsyncTask<String, Void, Void> {
         @Override
         protected Void doInBackground(String... params) {
@@ -594,5 +589,6 @@ public class LocationUpdatesService extends Service implements GoogleApiClient.C
 
         return result;
     }
+    */
 
 }

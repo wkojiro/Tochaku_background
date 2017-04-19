@@ -165,7 +165,7 @@ public class LoginActivity extends AppCompatActivity implements SharedPreference
                        @Override
                        public Task<String> then(Task<String> task) throws Exception {
 
-                           return new RailsApi(LoginActivity.this,mProgress).saveUserdata(task.getResult());
+                           return new RailsApi(LoginActivity.this).saveUserdata(task.getResult());
                        }
                    }).onSuccess(new Continuation<String, String>() {
                          @Override
